@@ -32,6 +32,87 @@ router.get('/api/artifacts/:sessionId/:filename', async (req, res) => {
   }
 });
 
+// GET /api/artifacts/:sessionId/proposta/preview — HTML preview of proposal
+router.get('/api/artifacts/:sessionId/proposta/preview', async (req, res) => {
+  try {
+    const content = await artifactManager.getArtifact(
+      req.params.sessionId,
+      '06-proposta-comercial.md'
+    );
+
+    if (!content) {
+      res.status(404).json({ error: 'Proposta não encontrada' });
+      return;
+    }
+
+    // Simple Markdown to HTML conversion (headers, tables, bold, italic, lists, blockquotes, hr)
+    let html = content
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+      .replace(/^- (.+)$/gm, '<li>$1</li>')
+      .replace(/^---$/gm, '<hr>')
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/\{\{client_logo\}\}/g, '<div style="text-align:center;color:#888;padding:20px;border:1px dashed #444">[Logo do Cliente]</div>')
+      .replace(/\{\{consultant_signature\}\}/g, '<div style="text-align:center;color:#888;padding:20px;border:1px dashed #444">[Assinatura do Consultor]</div>');
+
+    // Wrap consecutive <li> in <ul>
+    html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+
+    // Simple table conversion
+    html = html.replace(/\|(.+)\|\n\|[-| ]+\|\n((?:\|.+\|\n?)+)/g, (_match, header, body) => {
+      const ths = header.split('|').filter(Boolean).map((h: string) => `<th>${h.trim()}</th>`).join('');
+      const rows = body.trim().split('\n').map((row: string) => {
+        const tds = row.split('|').filter(Boolean).map((c: string) => `<td>${c.trim()}</td>`).join('');
+        return `<tr>${tds}</tr>`;
+      }).join('');
+      return `<table><thead><tr>${ths}</tr></thead><tbody>${rows}</tbody></table>`;
+    });
+
+    const page = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Proposta Comercial — Preview</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #fff; color: #1a1a1a; max-width: 800px; margin: 0 auto; padding: 40px 60px; line-height: 1.7; }
+    h1 { font-size: 28px; margin: 30px 0 15px; color: #111; }
+    h2 { font-size: 22px; margin: 25px 0 12px; color: #222; border-bottom: 2px solid #22c55e; padding-bottom: 6px; }
+    h3 { font-size: 18px; margin: 20px 0 10px; color: #333; }
+    p { margin: 10px 0; }
+    strong { color: #111; }
+    blockquote { border-left: 4px solid #22c55e; padding: 10px 20px; margin: 15px 0; background: #f8faf8; color: #444; }
+    table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+    th, td { border: 1px solid #ddd; padding: 10px 14px; text-align: left; }
+    th { background: #f0fdf4; font-weight: 600; }
+    tr:nth-child(even) { background: #fafafa; }
+    ul { margin: 10px 0 10px 30px; }
+    li { margin: 4px 0; }
+    hr { margin: 30px 0; border: none; border-top: 1px solid #e5e5e5; }
+    @media print {
+      body { padding: 20px; max-width: 100%; }
+      h2 { break-after: avoid; }
+      table { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+<p>${html}</p>
+</body>
+</html>`;
+
+    res.type('text/html').send(page);
+  } catch {
+    res.status(500).json({ error: 'Erro ao gerar preview' });
+  }
+});
+
 // PUT /api/artifacts/:sessionId/:filename — update artifact content
 router.put('/api/artifacts/:sessionId/:filename', async (req, res) => {
   try {

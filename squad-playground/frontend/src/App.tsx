@@ -5,6 +5,8 @@ import { GameCanvas } from './game/GameCanvas';
 import { ProgressBar } from './components/ProgressBar';
 import { MessageBubble } from './components/MessageBubble';
 import { ErrorToast } from './components/ErrorToast';
+import { ToastSystem } from './components/ToastSystem';
+import { ReconnectBanner } from './components/ReconnectBanner';
 import { GameHUD } from './components/GameHUD';
 import { ApprovalPopup } from './components/ApprovalPopup';
 import { VictoryScreen } from './components/VictoryScreen';
@@ -20,6 +22,8 @@ export default function App() {
     <>
       <MatrixRain />
       <LoadingScreen />
+      <ReconnectBanner />
+      <ToastSystem />
       <ErrorToast />
       <GameHUD />
       <ApprovalPopup />

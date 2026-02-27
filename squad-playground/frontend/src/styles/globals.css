@@ -1,0 +1,131 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* === Core Matrix Colors === */
+  --matrix-black: #0D0D0D;
+  --matrix-black-soft: #1A1A2E;
+  --matrix-black-hover: #16213E;
+  --matrix-green: #22C55E;
+  --matrix-dark-green: #166534;
+  --matrix-neon: #10B981;
+  --matrix-glow: rgba(34, 197, 94, 0.3);
+  --matrix-glow-strong: rgba(34, 197, 94, 0.6);
+
+  /* === Status Colors === */
+  --status-idle: #6B7280;
+  --status-processing: #F59E0B;
+  --status-done: #22C55E;
+  --status-error: #EF4444;
+  --status-paused: #8B5CF6;
+
+  /* === Agent Colors === */
+  --agent-master: #8B5CF6;
+  --agent-pesquisa: #2563EB;
+  --agent-organizador: #059669;
+  --agent-solucoes: #F59E0B;
+  --agent-estruturas: #374151;
+  --agent-financeiro: #10B981;
+  --agent-closer: #DC2626;
+  --agent-apresentacao: #EC4899;
+
+  /* === UI Colors === */
+  --text-primary: #FFFFFF;
+  --text-secondary: #9CA3AF;
+  --text-muted: #6B7280;
+  --border-default: #374151;
+  --border-active: #22C55E;
+  --surface-elevated: rgba(26, 26, 46, 0.95);
+  --overlay-backdrop: rgba(0, 0, 0, 0.85);
+
+  /* === Gamification === */
+  --gold: #F59E0B;
+  --gold-glow: rgba(245, 158, 11, 0.4);
+
+  /* === Typography === */
+  --font-ui: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-pixel: 'Press Start 2P', monospace;
+
+  /* === Type Scale === */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+
+  /* === Spacing === */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+
+  /* === Shadows === */
+  --shadow-glow: 0 0 10px var(--matrix-glow);
+  --shadow-glow-lg: 0 0 20px var(--matrix-glow), 0 0 40px var(--matrix-glow);
+  --shadow-elevated: 0 4px 6px rgba(0, 0, 0, 0.5);
+
+  /* === Z-Index === */
+  --z-canvas: 1;
+  --z-overlay: 10;
+  --z-hud: 20;
+  --z-sidebar: 30;
+  --z-popup: 40;
+  --z-editor: 50;
+  --z-victory: 60;
+  --z-toast: 70;
+
+  /* === Animation === */
+  --duration-instant: 100ms;
+  --duration-fast: 200ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+  --duration-slower: 1000ms;
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* === Base Styles === */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--matrix-black);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  line-height: 1.5;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* === Scrollbar === */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--matrix-black);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--matrix-dark-green);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--matrix-green);
+}
+
+/* === Selection === */
+::selection {
+  background: var(--matrix-green);
+  color: var(--matrix-black);
+}

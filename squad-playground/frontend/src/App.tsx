@@ -9,6 +9,7 @@ import { ErrorToast } from './components/ErrorToast';
 import { ToastSystem } from './components/ToastSystem';
 import { ReconnectBanner } from './components/ReconnectBanner';
 import { GameHUD } from './components/GameHUD';
+import { Dashboard } from './components/Dashboard';
 import { BottomBar } from './components/BottomBar';
 import { useSocket } from './hooks/useSocket';
 import { useConnectionStore } from './stores/useConnectionStore';
@@ -52,6 +53,7 @@ export default function App() {
           )}
         </div>
 
+        <Dashboard />
         <ProgressBar />
         <MessageBubble />
         <GameCanvas />

@@ -263,4 +263,16 @@ export class PipelineScene extends Phaser.Scene {
       y: GROUND_Y - 80,
     };
   }
+
+  shutdown(): void {
+    // Cleanup to prevent memory leaks (AC: 3)
+    this.neo?.destroy();
+    this.ambientParticles?.destroy();
+    this.neoTrail?.destroy();
+    this.houses.forEach((h) => h.destroy());
+    this.agentLabels.forEach((l) => l.destroy());
+    this.groundLine?.destroy();
+    this.tweens.killAll();
+    this.time.removeAllEvents();
+  }
 }

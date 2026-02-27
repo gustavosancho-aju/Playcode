@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { MatrixRain } from './components/MatrixRain';
 import { LoadingScreen } from './components/LoadingScreen';
 import { Title } from './components/Title';
@@ -8,11 +9,13 @@ import { ErrorToast } from './components/ErrorToast';
 import { ToastSystem } from './components/ToastSystem';
 import { ReconnectBanner } from './components/ReconnectBanner';
 import { GameHUD } from './components/GameHUD';
-import { ApprovalPopup } from './components/ApprovalPopup';
-import { VictoryScreen } from './components/VictoryScreen';
 import { BottomBar } from './components/BottomBar';
 import { useSocket } from './hooks/useSocket';
 import { useConnectionStore } from './stores/useConnectionStore';
+
+// Lazy load heavy overlays (AC: 8 — bundle optimization)
+const ApprovalPopup = lazy(() => import('./components/ApprovalPopup').then((m) => ({ default: m.ApprovalPopup })));
+const VictoryScreen = lazy(() => import('./components/VictoryScreen').then((m) => ({ default: m.VictoryScreen })));
 
 export default function App() {
   const { sendPing } = useSocket();
@@ -26,8 +29,10 @@ export default function App() {
       <ToastSystem />
       <ErrorToast />
       <GameHUD />
-      <ApprovalPopup />
-      <VictoryScreen />
+      <Suspense fallback={null}>
+        <ApprovalPopup />
+        <VictoryScreen />
+      </Suspense>
 
       <div className="relative z-10 min-h-screen bg-transparent text-white flex flex-col items-center gap-6 py-8 pb-16">
         <Title />

@@ -22,10 +22,13 @@ export function MatrixRain() {
     let columns: number;
     let drops: number[];
 
+    const MAX_COLUMNS = 40;
+
     function resize() {
       canvas!.width = window.innerWidth;
       canvas!.height = window.innerHeight;
-      columns = Math.floor(canvas!.width / FONT_SIZE);
+      const rawCols = Math.floor(canvas!.width / FONT_SIZE);
+      columns = Math.min(rawCols, MAX_COLUMNS);
       drops = Array.from({ length: columns }, () => Math.random() * -100);
     }
 

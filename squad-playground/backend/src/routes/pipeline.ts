@@ -52,6 +52,10 @@ export function createPipelineRouter(io: Server): Router {
 
   // Register socket events for approval
   io.on('connection', (socket) => {
+    socket.on('heartbeat', () => {
+      socket.emit('heartbeat-ack');
+    });
+
     socket.on('pipeline-approve', (data: { approved: boolean; feedback?: string }) => {
       orchestrator!.handleApproval(data.approved, data.feedback);
     });

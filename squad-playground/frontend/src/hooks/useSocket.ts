@@ -33,15 +33,22 @@ export function useSocket() {
     });
     socketRef.current = socket;
 
+    // Heartbeat every 30s
+    let heartbeatTimer: ReturnType<typeof setInterval>;
+
     socket.on('connect', () => {
       console.log('WebSocket connected');
       setConnected(true);
       resetReconnect();
+      heartbeatTimer = setInterval(() => {
+        socket.emit('heartbeat');
+      }, 30_000);
     });
 
     socket.on('disconnect', () => {
       console.log('WebSocket disconnected');
       setConnected(false);
+      clearInterval(heartbeatTimer);
     });
 
     socket.io.on('reconnect_attempt', () => {
@@ -120,6 +127,7 @@ export function useSocket() {
     });
 
     return () => {
+      clearInterval(heartbeatTimer);
       socket.disconnect();
     };
   }, [setConnected, resetReconnect, incrementReconnect, setLastPong]);

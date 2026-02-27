@@ -2,6 +2,9 @@ import { MatrixRain } from './components/MatrixRain';
 import { LoadingScreen } from './components/LoadingScreen';
 import { Title } from './components/Title';
 import { Dashboard } from './components/Dashboard';
+import { ProgressBar } from './components/ProgressBar';
+import { MessageBubble } from './components/MessageBubble';
+import { ErrorToast } from './components/ErrorToast';
 import { BottomBar } from './components/BottomBar';
 import { useSocket } from './hooks/useSocket';
 import { useConnectionStore } from './stores/useConnectionStore';
@@ -14,10 +17,11 @@ export default function App() {
     <>
       <MatrixRain />
       <LoadingScreen />
+      <ErrorToast />
 
       <div className="relative z-10 min-h-screen bg-transparent text-white flex flex-col items-center gap-6 py-8 pb-16">
         <Title />
-        <p className="text-gray-500 font-mono text-sm">Matrix Pipeline v0.1.0</p>
+        <p className="text-gray-500 font-mono text-sm">Matrix Pipeline v0.2.0</p>
 
         <div className="flex items-center gap-4">
           <button
@@ -33,6 +37,8 @@ export default function App() {
           )}
         </div>
 
+        <ProgressBar />
+        <MessageBubble />
         <Dashboard />
       </div>
 

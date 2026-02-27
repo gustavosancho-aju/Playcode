@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useConnectionStore } from '../stores/useConnectionStore';
 import { useAgentStore } from '../stores/useAgentStore';
+import { usePipelineStore } from '../stores/usePipelineStore';
 import type { AgentId, AgentStatus } from 'shared/types';
 
 const SOCKET_URL = 'http://localhost:3000';
@@ -9,6 +10,8 @@ const SOCKET_URL = 'http://localhost:3000';
 interface PipelineUpdateEvent {
   agent: string;
   status: string;
+  step: number;
+  totalSteps: number;
   message?: string;
   artifactPath?: string;
 }
@@ -55,6 +58,30 @@ export function useSocket() {
         message: data.message || null,
         artifactPath: data.artifactPath || null,
       });
+      usePipelineStore.getState().updateProgress({
+        agent: agentId,
+        status: data.status,
+        step: data.step,
+        totalSteps: data.totalSteps,
+        message: data.message,
+        artifactPath: data.artifactPath,
+      });
+    });
+
+    socket.on('pipeline-started', (data: { sessionId: string }) => {
+      usePipelineStore.getState().setSession(data.sessionId);
+    });
+
+    socket.on('approval-required', (data: { agent: string }) => {
+      usePipelineStore.getState().setApprovalRequired(data.agent as AgentId);
+    });
+
+    socket.on('pipeline-complete', (data: { artifacts: string[] }) => {
+      usePipelineStore.getState().setCompleted(data.artifacts);
+    });
+
+    socket.on('pipeline-error', (data: { error: string }) => {
+      usePipelineStore.getState().setError(data.error);
     });
 
     return () => {
@@ -66,5 +93,9 @@ export function useSocket() {
     socketRef.current?.emit('ping');
   }, []);
 
-  return { sendPing };
+  const approveStep = useCallback((approved: boolean, feedback?: string) => {
+    socketRef.current?.emit('pipeline-approve', { approved, feedback });
+  }, []);
+
+  return { sendPing, approveStep };
 }

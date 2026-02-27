@@ -13,7 +13,7 @@ export class NeoTrail {
     this.scene = scene;
 
     for (let i = 0; i < TRAIL_COUNT; i++) {
-      const rect = scene.add.rectangle(0, 0, 64, 64, 0x22c55e, 0.3 - i * 0.1);
+      const rect = scene.add.rectangle(0, 0, 32, 32, 0x22c55e, 0.3 - i * 0.1);
       rect.setVisible(false);
       this.trails.push(rect);
     }

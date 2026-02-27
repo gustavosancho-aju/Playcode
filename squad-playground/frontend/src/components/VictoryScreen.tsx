@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { usePipelineStore } from '../stores/usePipelineStore';
 import { useGameStore } from '../stores/useGameStore';
 
-const API_BASE = 'http://localhost:3000';
+const API_BASE = 'http://localhost:3001';
 const PARTICLE_COUNT = 60;
 
 function formatTime(ms: number): string {

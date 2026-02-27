@@ -9,17 +9,18 @@ export class AmbientParticles {
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
+    const w = scene.scale.width;
+    const h = scene.scale.height;
 
     for (let i = 0; i < PARTICLE_COUNT; i++) {
-      const x = Phaser.Math.Between(0, 4000);
-      const y = Phaser.Math.Between(50, 550);
+      const x = Phaser.Math.Between(0, w);
+      const y = Phaser.Math.Between(50, h - 50);
       const size = Phaser.Math.Between(2, 4);
       const alpha = Phaser.Math.FloatBetween(0.1, 0.4);
 
       const dot = scene.add.rectangle(x, y, size, size, 0x22c55e, alpha);
       this.particles.push(dot);
 
-      // Slow floating movement
       scene.tweens.add({
         targets: dot,
         y: y + Phaser.Math.Between(-30, 30),

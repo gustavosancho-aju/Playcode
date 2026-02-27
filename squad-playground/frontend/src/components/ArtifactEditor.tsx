@@ -3,7 +3,7 @@ import { usePipelineStore } from '../stores/usePipelineStore';
 import { useGameStore } from '../stores/useGameStore';
 import { useSocket } from '../hooks/useSocket';
 
-const API_BASE = 'http://localhost:3000';
+const API_BASE = 'http://localhost:3001';
 const AUTO_SAVE_INTERVAL = 5000;
 
 interface ArtifactEditorProps {

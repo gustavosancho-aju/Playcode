@@ -5,9 +5,11 @@ import { useAgentStore } from '../stores/useAgentStore';
 import { usePipelineStore } from '../stores/usePipelineStore';
 import { useGameStore } from '../stores/useGameStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
+import { useChatStore } from '../stores/useChatStore';
+import { AGENT_DEFINITIONS } from 'shared/types';
 import type { AgentId, AgentStatus } from 'shared/types';
 
-const SOCKET_URL = 'http://localhost:3000';
+const SOCKET_URL = 'http://localhost:3001';
 
 interface PipelineUpdateEvent {
   agent: string;
@@ -79,6 +81,18 @@ export function useSocket() {
         message: data.message,
         artifactPath: data.artifactPath,
       });
+      if (data.message) {
+        const def = AGENT_DEFINITIONS.find((a) => a.id === agentId);
+        if (def) {
+          useChatStore.getState().addMessage({
+            agentId,
+            icon: def.icon,
+            name: def.name,
+            color: def.color,
+            text: data.message,
+          });
+        }
+      }
     });
 
     socket.on('pipeline-started', (data: { sessionId: string }) => {

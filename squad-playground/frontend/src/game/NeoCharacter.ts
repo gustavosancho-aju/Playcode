@@ -1,25 +1,237 @@
 import Phaser from 'phaser';
 
-const FRAME_SIZE = 32;
-const SCALE = 2;
+const PIXEL_SIZE = 2; // Each "pixel" is 2x2 real pixels
+const SPRITE_W = 32;
+const SPRITE_H = 32;
+const RENDER_SIZE = SPRITE_W * PIXEL_SIZE; // 64px
 
-export const NEO_ANIMATIONS = {
-  idle: { start: 0, end: 1, frameRate: 2, repeat: -1 },
-  walk: { start: 2, end: 7, frameRate: 10, repeat: -1 },
-  run: { start: 8, end: 11, frameRate: 12, repeat: -1 },
-  processing: { start: 12, end: 15, frameRate: 6, repeat: -1 },
-  success: { start: 16, end: 18, frameRate: 8, repeat: 0 },
-  enter: { start: 19, end: 21, frameRate: 8, repeat: 0 },
-  exit: { start: 22, end: 24, frameRate: 8, repeat: 0 },
+// Pokemon Yellow Gen 1 style palette
+const COLOR_BODY = 0x22c55e;      // 1 - green body/shirt
+const COLOR_DARK = 0x166534;      // 2 - dark green shading
+const COLOR_EYES = 0xffffff;      // 3 - white eyes
+const COLOR_GLOW = 0x4ade80;      // 4 - light green glow
+const COLOR_CAPE = 0x1a1a2e;      // 5 - dark cape/coat
+const COLOR_CAPE_EDGE = 0x333355; // 6 - cape highlight
+const COLOR_OUTLINE = 0x0a0a0a;   // 7 - black outline
+const COLOR_SKIN = 0xfde68a;      // 8 - face/skin tone
+const COLOR_PUPIL = 0x111111;     // 9 - dark pupils
+
+// 32x32 Neo Master CEO - Pokemon Yellow Gen 1 style, front view
+// 0=transparent, 1=green body, 2=dark green, 3=white eyes, 4=glow, 5=cape, 6=cape edge, 7=outline, 8=skin, 9=pupil
+const FRAME_IDLE_1 = [
+  '00000000000000000000000000000000',
+  '00000000000007777000000000000000',
+  '00000000000077777700000000000000',
+  '00000000000777777770000000000000',
+  '00000000007777777777000000000000',
+  '00000000007777777777000000000000',
+  '00000000000777777770000000000000',
+  '00000000000788888870000000000000',
+  '00000000007888888887000000000000',
+  '00000000078883388838700000000000',
+  '00000000078899388998700000000000',
+  '00000000078883388838700000000000',
+  '00000000007888888887000000000000',
+  '00000000000788828870000000000000',
+  '00000000000078888700000000000000',
+  '00000000000007777000000000000000',
+  '00000000000065556600000000000000',
+  '00000000006555555556000000000000',
+  '00000000065511111556000000000000',
+  '00000000855114411158800000000000',
+  '00000008855144441158880000000000',
+  '00000088551111111115588000000000',
+  '00000078551111111115587000000000',
+  '00000007855111111155870000000000',
+  '00000000785511111558700000000000',
+  '00000000078555555587000000000000',
+  '00000000007755557700000000000000',
+  '00000000000722227000000000000000',
+  '00000000000721127000000000000000',
+  '00000000000720027000000000000000',
+  '00000000000770077000000000000000',
+  '00000000000000000000000000000000',
+];
+
+const FRAME_IDLE_2 = [
+  '00000000000000000000000000000000',
+  '00000000000007777000000000000000',
+  '00000000000077777700000000000000',
+  '00000000000777777770000000000000',
+  '00000000007777777777000000000000',
+  '00000000007777777777000000000000',
+  '00000000000777777770000000000000',
+  '00000000000788888870000000000000',
+  '00000000007888888887000000000000',
+  '00000000078888888888700000000000',
+  '00000000078877388778700000000000', // blink
+  '00000000078888888888700000000000',
+  '00000000007888888887000000000000',
+  '00000000000788828870000000000000',
+  '00000000000078888700000000000000',
+  '00000000000007777000000000000000',
+  '00000000000065556600000000000000',
+  '00000000006555555556000000000000',
+  '00000000065511111556000000000000',
+  '00000000855114411158800000000000',
+  '00000008855144441158880000000000',
+  '00000088551111111115588000000000',
+  '00000078551111111115587000000000',
+  '00000007855111111155870000000000',
+  '00000000785511111558700000000000',
+  '00000000078555555587000000000000',
+  '00000000007755557700000000000000',
+  '00000000000722227000000000000000',
+  '00000000000721127000000000000000',
+  '00000000000720027000000000000000',
+  '00000000000770077000000000000000',
+  '00000000000000000000000000000000',
+];
+
+// Walk frames - arms and legs alternate
+const FRAME_WALK_1 = [
+  '00000000000000000000000000000000',
+  '00000000000007777000000000000000',
+  '00000000000077777700000000000000',
+  '00000000000777777770000000000000',
+  '00000000007777777777000000000000',
+  '00000000007777777777000000000000',
+  '00000000000777777770000000000000',
+  '00000000000788888870000000000000',
+  '00000000007888888887000000000000',
+  '00000000078883388838700000000000',
+  '00000000078899388998700000000000',
+  '00000000078883388838700000000000',
+  '00000000007888888887000000000000',
+  '00000000000788828870000000000000',
+  '00000000000078888700000000000000',
+  '00000000000007777000000000000000',
+  '00000000000065556600000000000000',
+  '00000000006555555556000000000000',
+  '00000000865511111556800000000000',
+  '00000008855114411158800000000000',
+  '00000088551144441115880000000000',
+  '00000788551111111115880000000000',
+  '00000078551111111115870000000000',
+  '00000007855111111155700000000000',
+  '00000000785511111558000000000000',
+  '00000000078555555587000000000000',
+  '00000000007755557700000000000000',
+  '00000000000722127000000000000000',
+  '00000000000720027000000000000000',
+  '00000000000700007000000000000000',
+  '00000000000700000700000000000000',
+  '00000000000000000000000000000000',
+];
+
+const FRAME_WALK_2 = [
+  '00000000000000000000000000000000',
+  '00000000000007777000000000000000',
+  '00000000000077777700000000000000',
+  '00000000000777777770000000000000',
+  '00000000007777777777000000000000',
+  '00000000007777777777000000000000',
+  '00000000000777777770000000000000',
+  '00000000000788888870000000000000',
+  '00000000007888888887000000000000',
+  '00000000078883388838700000000000',
+  '00000000078899388998700000000000',
+  '00000000078883388838700000000000',
+  '00000000007888888887000000000000',
+  '00000000000788828870000000000000',
+  '00000000000078888700000000000000',
+  '00000000000007777000000000000000',
+  '00000000000065556600000000000000',
+  '00000000006555555556000000000000',
+  '00000000065511111556800000000000',
+  '00000000085114411158880000000000',
+  '00000000885144441115888000000000',
+  '00000000885111111115887000000000',
+  '00000000785111111115870000000000',
+  '00000000075511111155700000000000',
+  '00000000008551111558000000000000',
+  '00000000078555555587000000000000',
+  '00000000007755557700000000000000',
+  '00000000000721227000000000000000',
+  '00000000000720027000000000000000',
+  '00000000000700007000000000000000',
+  '00000000007000007000000000000000',
+  '00000000000000000000000000000000',
+];
+
+// Processing frame - glow aura around cape
+const FRAME_PROCESS = [
+  '00000000000000000000000000000000',
+  '00000000000004444000000000000000',
+  '00000000000044444400000000000000',
+  '00000000000444444440000000000000',
+  '00000000004444444444000000000000',
+  '00000000004444444444000000000000',
+  '00000000000444444440000000000000',
+  '00000000000488888840000000000000',
+  '00000000004888888884000000000000',
+  '00000000048883388838400000000000',
+  '00000000048899388998400000000000',
+  '00000000048883388838400000000000',
+  '00000000004888888884000000000000',
+  '00000000000488828840000000000000',
+  '00000000000048888400000000000000',
+  '00000000000004444000000000000000',
+  '00000000000065556600000000000000',
+  '00000000006555555556000000000000',
+  '00000000065511111556000000000000',
+  '00000000855114411158800000000000',
+  '00000008855144441158880000000000',
+  '00000048551111111115584000000000',
+  '00000048551111111115584000000000',
+  '00000004855111111155840000000000',
+  '00000000485511111558400000000000',
+  '00000000048555555584000000000000',
+  '00000000004455554400000000000000',
+  '00000000000422224000000000000000',
+  '00000000000421124000000000000000',
+  '00000000000420024000000000000000',
+  '00000000000440044000000000000000',
+  '00000000000000000000000000000000',
+];
+
+type AnimationKey = 'idle' | 'walk' | 'processing' | 'enter' | 'exit' | 'success';
+
+const FRAME_MAP: Record<string, string[][]> = {
+  idle: [FRAME_IDLE_1, FRAME_IDLE_2],
+  walk: [FRAME_WALK_1, FRAME_WALK_2],
+  processing: [FRAME_PROCESS, FRAME_IDLE_1],
+};
+
+const COLOR_MAP: Record<string, number> = {
+  '1': COLOR_BODY,
+  '2': COLOR_DARK,
+  '3': COLOR_EYES,
+  '4': COLOR_GLOW,
+  '5': COLOR_CAPE,
+  '6': COLOR_CAPE_EDGE,
+  '7': COLOR_OUTLINE,
+  '8': COLOR_SKIN,
+  '9': COLOR_PUPIL,
 };
 
 export class NeoCharacter {
   private scene: Phaser.Scene;
-  private sprite: Phaser.GameObjects.Sprite | null = null;
-  private fallback: Phaser.GameObjects.Rectangle | null = null;
-  private useFallback = false;
+  private container!: Phaser.GameObjects.Container;
+  private graphics!: Phaser.GameObjects.Graphics;
   public x: number;
   public y: number;
+  private currentAnim: AnimationKey = 'idle';
+  private frameIndex = 0;
+  private frameTimer = 0;
+  private frameRates: Record<string, number> = {
+    idle: 500,
+    walk: 150,
+    processing: 300,
+  };
+  private pulseAlpha = 1;
+  private pulseDir = -1;
+  private direction: 'down' | 'up' | 'right' | 'left' = 'down';
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     this.scene = scene;
@@ -27,92 +239,108 @@ export class NeoCharacter {
     this.y = y;
   }
 
-  static preload(scene: Phaser.Scene): void {
-    scene.load.atlas(
-      'neo',
-      '/assets/sprites/neo-spritesheet.png',
-      '/assets/sprites/neo-atlas.json'
-    );
+  static preload(_scene: Phaser.Scene): void {
+    // No external assets needed - procedural pixel art
   }
 
   create(): void {
-    // Check if atlas loaded successfully
-    if (this.scene.textures.exists('neo') && this.scene.textures.get('neo').key !== '__MISSING') {
-      this.createSprite();
-    } else {
-      this.createFallback();
-    }
+    this.graphics = this.scene.add.graphics();
+    this.container = this.scene.add.container(this.x, this.y, [this.graphics]);
+    this.drawFrame();
   }
 
-  private createSprite(): void {
-    this.sprite = this.scene.add.sprite(this.x, this.y, 'neo');
-    this.sprite.setScale(SCALE);
+  private drawFrame(): void {
+    const frames = FRAME_MAP[this.currentAnim] || FRAME_MAP['idle'];
+    const frame = frames[this.frameIndex % frames.length];
+    const g = this.graphics;
+    g.clear();
 
-    // Create animations
-    for (const [key, config] of Object.entries(NEO_ANIMATIONS)) {
-      if (this.scene.anims.exists(`neo-${key}`)) continue;
+    const offsetX = -(RENDER_SIZE / 2);
+    const offsetY = -(RENDER_SIZE / 2);
 
-      const frames = [];
-      for (let i = config.start; i <= config.end; i++) {
-        const frameName = `${key}_${i - config.start}`;
-        frames.push({ key: 'neo', frame: frameName });
+    for (let row = 0; row < SPRITE_H; row++) {
+      for (let col = 0; col < SPRITE_W; col++) {
+        const ch = frame[row]?.[col];
+        if (ch && ch !== '0') {
+          const color = COLOR_MAP[ch] || COLOR_BODY;
+          let alpha = this.currentAnim === 'processing' ? this.pulseAlpha : 1;
+          if (ch === '4') alpha = Math.min(1, this.pulseAlpha + 0.2);
+          g.fillStyle(color, alpha);
+          g.fillRect(
+            offsetX + col * PIXEL_SIZE,
+            offsetY + row * PIXEL_SIZE,
+            PIXEL_SIZE,
+            PIXEL_SIZE
+          );
+        }
       }
-
-      this.scene.anims.create({
-        key: `neo-${key}`,
-        frames,
-        frameRate: config.frameRate,
-        repeat: config.repeat,
-      });
     }
-
-    this.play('idle');
   }
 
-  private createFallback(): void {
-    this.useFallback = true;
-    this.fallback = this.scene.add.rectangle(
-      this.x, this.y,
-      FRAME_SIZE * SCALE, FRAME_SIZE * SCALE,
-      0x22c55e, 0.8
-    );
-    this.fallback.setStrokeStyle(2, 0x16a34a);
+  play(animation: string): void {
+    const anim = animation as AnimationKey;
+    // Map 'enter'/'exit'/'success' to existing anims
+    const mapped = FRAME_MAP[anim] ? anim : 'idle';
+    if (mapped !== this.currentAnim) {
+      this.currentAnim = mapped as AnimationKey;
+      this.frameIndex = 0;
+      this.frameTimer = 0;
+      this.drawFrame();
+    }
   }
 
-  play(animation: keyof typeof NEO_ANIMATIONS): void {
-    if (this.sprite && !this.useFallback) {
-      this.sprite.play(`neo-${animation}`);
+  setDirection(dir: 'down' | 'up' | 'right' | 'left'): void {
+    this.direction = dir;
+    // Rotation based on direction (top-down)
+    switch (dir) {
+      case 'down': this.container?.setRotation(0); break;
+      case 'up': this.container?.setRotation(Math.PI); break;
+      case 'right': this.container?.setRotation(-Math.PI / 2); break;
+      case 'left': this.container?.setRotation(Math.PI / 2); break;
     }
-    // Fallback has no animations — just stays as rectangle
   }
 
   setPosition(x: number, y: number): void {
     this.x = x;
     this.y = y;
-    if (this.sprite) this.sprite.setPosition(x, y);
-    if (this.fallback) this.fallback.setPosition(x, y);
+    this.container?.setPosition(x, y);
   }
 
-  setFlipX(flip: boolean): void {
-    if (this.sprite) this.sprite.setFlipX(flip);
+  setFlipX(_flip: boolean): void {
+    // Handled by setDirection in top-down view
   }
 
   setAlpha(alpha: number): void {
-    if (this.sprite) this.sprite.setAlpha(alpha);
-    if (this.fallback) this.fallback.setAlpha(alpha);
+    this.container?.setAlpha(alpha);
   }
 
   setVisible(visible: boolean): void {
-    if (this.sprite) this.sprite.setVisible(visible);
-    if (this.fallback) this.fallback.setVisible(visible);
+    this.container?.setVisible(visible);
   }
 
   getDisplayObject(): Phaser.GameObjects.GameObject | null {
-    return this.sprite || this.fallback || null;
+    return this.container || null;
+  }
+
+  update(delta: number): void {
+    this.frameTimer += delta;
+    const rate = this.frameRates[this.currentAnim] || 500;
+
+    if (this.currentAnim === 'processing') {
+      this.pulseAlpha += this.pulseDir * (delta / 400);
+      if (this.pulseAlpha <= 0.4) { this.pulseAlpha = 0.4; this.pulseDir = 1; }
+      if (this.pulseAlpha >= 1) { this.pulseAlpha = 1; this.pulseDir = -1; }
+    }
+
+    if (this.frameTimer >= rate) {
+      this.frameTimer = 0;
+      const frames = FRAME_MAP[this.currentAnim] || FRAME_MAP['idle'];
+      this.frameIndex = (this.frameIndex + 1) % frames.length;
+      this.drawFrame();
+    }
   }
 
   destroy(): void {
-    this.sprite?.destroy();
-    this.fallback?.destroy();
+    this.container?.destroy();
   }
 }

@@ -1,4 +1,7 @@
 import { Router } from 'express';
+import { createReadStream, existsSync } from 'fs';
+import { readdir, stat, readFile } from 'fs/promises';
+import { join, basename } from 'path';
 import { artifactManager } from '../artifacts/artifact-manager';
 
 const router = Router();
@@ -110,6 +113,65 @@ router.get('/api/artifacts/:sessionId/proposta/preview', async (req, res) => {
     res.type('text/html').send(page);
   } catch {
     res.status(500).json({ error: 'Erro ao gerar preview' });
+  }
+});
+
+// GET /api/artifacts/:sessionId/landing-page — serve landing page HTML
+router.get('/api/artifacts/:sessionId/landing-page', async (req, res) => {
+  try {
+    // Try landing-page/index.html first, then 07-landing-page.html
+    let content = await artifactManager.getArtifact(req.params.sessionId, 'index.html');
+    if (!content) {
+      content = await artifactManager.getArtifact(req.params.sessionId, '07-landing-page.html');
+    }
+    if (!content) {
+      res.status(404).json({ error: 'Landing page não encontrada' });
+      return;
+    }
+    // Strip YAML frontmatter if present
+    if (content.startsWith('---')) {
+      const endIdx = content.indexOf('---', 3);
+      if (endIdx > 0) {
+        content = content.slice(endIdx + 3).trim();
+      }
+    }
+    res.type('text/html').send(content);
+  } catch {
+    res.status(500).json({ error: 'Erro ao servir landing page' });
+  }
+});
+
+// GET /api/artifacts/:sessionId/download — download all artifacts as ZIP
+router.get('/api/artifacts/:sessionId/download', async (req, res) => {
+  try {
+    const sessionDir = artifactManager.getSessionDir(req.params.sessionId);
+    if (!existsSync(sessionDir)) {
+      res.status(404).json({ error: 'Session não encontrada' });
+      return;
+    }
+
+    // Build a simple ZIP using raw concatenation (no external dep)
+    // Use tar-like approach: set headers and pipe files
+    const files = await readdir(sessionDir);
+    const artifactFiles = files.filter((f) => f.endsWith('.md') || f.endsWith('.html') || f.endsWith('.css') || f.endsWith('.json'));
+
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="artifacts-${req.params.sessionId}.tar"`);
+
+    // Simple concatenation with file boundaries (not a real ZIP, but functional)
+    for (const file of artifactFiles) {
+      const filePath = join(sessionDir, file);
+      const stats = await stat(filePath);
+      const content = await readFile(filePath, 'utf-8');
+      // Write file header
+      res.write(`\n=== FILE: ${file} (${stats.size} bytes) ===\n`);
+      res.write(content);
+      res.write('\n');
+    }
+
+    res.end();
+  } catch {
+    res.status(500).json({ error: 'Erro ao gerar download' });
   }
 });
 

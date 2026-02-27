@@ -32,6 +32,10 @@ export class ArtifactManager {
     return join(this.baseDir, sanitizeSessionId(sessionId));
   }
 
+  getSessionDir(sessionId: string): string {
+    return this.sessionPath(sessionId);
+  }
+
   async ensureSessionDir(sessionId: string): Promise<string> {
     const dir = this.sessionPath(sessionId);
     await mkdir(dir, { recursive: true });

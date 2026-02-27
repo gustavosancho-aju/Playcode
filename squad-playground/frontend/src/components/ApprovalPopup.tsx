@@ -1,13 +1,16 @@
-import { useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { usePipelineStore } from '../stores/usePipelineStore';
 import { useGameStore } from '../stores/useGameStore';
 import { useSocket } from '../hooks/useSocket';
 import { AGENT_DEFINITIONS } from 'shared/types';
+import { ArtifactEditor } from './ArtifactEditor';
 
 export function ApprovalPopup() {
   const pendingApproval = usePipelineStore((s) => s.pendingApproval);
+  const sessionId = usePipelineStore((s) => s.sessionId);
   const { approveStep, rollbackStep } = useSocket();
   const setTimerRunning = useGameStore((s) => s.setTimerRunning);
+  const [showEditor, setShowEditor] = useState(false);
 
   const agent = pendingApproval
     ? AGENT_DEFINITIONS.find((a) => a.id === pendingApproval.agentId)
@@ -17,6 +20,7 @@ export function ApprovalPopup() {
   useEffect(() => {
     if (pendingApproval) {
       setTimerRunning(false);
+      setShowEditor(false);
     }
   }, [pendingApproval, setTimerRunning]);
 
@@ -26,8 +30,7 @@ export function ApprovalPopup() {
   }, [approveStep, setTimerRunning]);
 
   const handleEdit = useCallback(() => {
-    // Story 4.2 will implement inline editor — for now just approve
-    console.log('[ApprovalPopup] Edit requested — stub (Story 4.2)');
+    setShowEditor(true);
   }, []);
 
   const handleBack = useCallback(() => {
@@ -35,9 +38,9 @@ export function ApprovalPopup() {
     setTimerRunning(true);
   }, [rollbackStep, setTimerRunning]);
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts (only when editor is NOT open)
   useEffect(() => {
-    if (!pendingApproval) return;
+    if (!pendingApproval || showEditor) return;
 
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Enter') {
@@ -52,9 +55,25 @@ export function ApprovalPopup() {
 
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [pendingApproval, handleApprove, handleEdit]);
+  }, [pendingApproval, showEditor, handleApprove, handleEdit]);
 
   if (!pendingApproval || !agent) return null;
+
+  // Show editor instead of popup
+  if (showEditor && sessionId) {
+    return (
+      <ArtifactEditor
+        sessionId={sessionId}
+        artifactName={pendingApproval.artifactName}
+        initialContent={pendingApproval.artifactContent}
+        onClose={() => setShowEditor(false)}
+        onSaveAndContinue={() => {
+          setShowEditor(false);
+          handleApprove();
+        }}
+      />
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">

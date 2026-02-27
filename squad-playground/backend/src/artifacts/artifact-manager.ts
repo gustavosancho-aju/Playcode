@@ -95,6 +95,20 @@ export class ArtifactManager {
     return JSON.parse(raw);
   }
 
+  async updateArtifact(sessionId: string, filename: string, content: string): Promise<void> {
+    const safeFilename = sanitizeFilename(filename);
+    const filePath = join(this.sessionPath(sessionId), safeFilename);
+
+    // Ensure file path stays within session directory
+    const resolved = resolve(filePath);
+    if (!resolved.startsWith(resolve(this.sessionPath(sessionId)))) {
+      throw new Error('Path traversal detected');
+    }
+
+    await writeFile(filePath, content, 'utf-8');
+    logger.info(`Artifact updated: ${filePath}`);
+  }
+
   async getArtifact(sessionId: string, filename: string): Promise<string | null> {
     const safeFilename = sanitizeFilename(filename);
     const filePath = join(this.sessionPath(sessionId), safeFilename);

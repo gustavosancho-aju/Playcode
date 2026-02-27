@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { usePipelineStore } from '../stores/usePipelineStore';
 import { useAgentStore } from '../stores/useAgentStore';
+import { useSettingsStore } from '../stores/useSettingsStore';
 
-const TYPEWRITER_SPEED = 33; // ~30 chars/sec
 const AUTO_DISMISS_MS = 5000;
 
 export function MessageBubble() {
   const { currentAgent, message, status } = usePipelineStore();
   const agents = useAgentStore((s) => s.agents);
+  const typewriterCharsPerSec = useSettingsStore((s) => s.animation.typewriterSpeed);
   const [displayText, setDisplayText] = useState('');
   const [visible, setVisible] = useState(false);
 
@@ -28,10 +29,10 @@ export function MessageBubble() {
       i++;
       setDisplayText(message.slice(0, i));
       if (i >= message.length) clearInterval(timer);
-    }, TYPEWRITER_SPEED);
+    }, Math.round(1000 / typewriterCharsPerSec));
 
     return () => clearInterval(timer);
-  }, [message]);
+  }, [message, typewriterCharsPerSec]);
 
   // Auto-dismiss after completion
   useEffect(() => {

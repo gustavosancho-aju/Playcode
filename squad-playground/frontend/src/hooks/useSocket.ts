@@ -4,6 +4,7 @@ import { useConnectionStore } from '../stores/useConnectionStore';
 import { useAgentStore } from '../stores/useAgentStore';
 import { usePipelineStore } from '../stores/usePipelineStore';
 import { useGameStore } from '../stores/useGameStore';
+import { useSettingsStore } from '../stores/useSettingsStore';
 import type { AgentId, AgentStatus } from 'shared/types';
 
 const SOCKET_URL = 'http://localhost:3000';
@@ -43,6 +44,10 @@ export function useSocket() {
       heartbeatTimer = setInterval(() => {
         socket.emit('heartbeat');
       }, 30_000);
+
+      // Send current pipeline config on connect
+      const { pipeline } = useSettingsStore.getState();
+      socket.emit('update-pipeline-config', { approvalRequired: pipeline.approvalPerAgent });
     });
 
     socket.on('disconnect', () => {
@@ -126,8 +131,19 @@ export function useSocket() {
       usePipelineStore.getState().setError(data.error);
     });
 
+    // Subscribe to settings changes to push pipeline config
+    let prevApproval = JSON.stringify(useSettingsStore.getState().pipeline.approvalPerAgent);
+    const unsubSettings = useSettingsStore.subscribe((state) => {
+      const curr = JSON.stringify(state.pipeline.approvalPerAgent);
+      if (curr !== prevApproval) {
+        prevApproval = curr;
+        socket.emit('update-pipeline-config', { approvalRequired: state.pipeline.approvalPerAgent });
+      }
+    });
+
     return () => {
       clearInterval(heartbeatTimer);
+      unsubSettings();
       socket.disconnect();
     };
   }, [setConnected, resetReconnect, incrementReconnect, setLastPong]);

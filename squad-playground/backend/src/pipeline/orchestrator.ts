@@ -44,6 +44,10 @@ export class PipelineOrchestrator {
     return this.state?.status === 'executing' || this.state?.status === 'approval_required';
   }
 
+  updateApprovalConfig(approvalRequired: Partial<Record<string, boolean>>): void {
+    this.config.approvalRequired = approvalRequired as Partial<Record<AgentId, boolean>>;
+  }
+
   async startPipeline(sessionId: string, initialPrompt: string): Promise<void> {
     if (this.isRunning()) {
       throw new Error('Pipeline already running');

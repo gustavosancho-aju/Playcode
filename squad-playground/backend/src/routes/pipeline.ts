@@ -65,6 +65,13 @@ export function createPipelineRouter(io: Server): Router {
         logger.error(`Rollback failed: ${err.message}`);
       });
     });
+
+    socket.on('update-pipeline-config', (data: { approvalRequired?: Record<string, boolean> }) => {
+      if (data.approvalRequired) {
+        orchestrator!.updateApprovalConfig(data.approvalRequired);
+        logger.info(`Pipeline approval config updated: ${JSON.stringify(data.approvalRequired)}`);
+      }
+    });
   });
 
   return router;

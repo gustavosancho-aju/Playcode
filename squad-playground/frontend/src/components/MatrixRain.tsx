@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useEffectsStore } from '../stores/useEffectsStore';
+import { useSettingsStore } from '../stores/useSettingsStore';
 
 const CHARS = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 const FONT_SIZE = 14;
@@ -7,7 +7,7 @@ const COLOR = '#22C55E';
 
 export function MatrixRain() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const codeRain = useEffectsStore((s) => s.codeRain);
+  const codeRain = useSettingsStore((s) => s.effects.codeRain);
 
   useEffect(() => {
     if (!codeRain) return;

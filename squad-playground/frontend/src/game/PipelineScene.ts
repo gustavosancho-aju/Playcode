@@ -8,13 +8,14 @@ import { GlitchEffect } from './effects/GlitchEffect';
 import { NeoTrail } from './effects/NeoTrail';
 import { ParticleBurst } from './effects/ParticleBurst';
 import type { AgentId } from 'shared/types';
+import { useSettingsStore } from '../stores/useSettingsStore';
 
 const WORLD_WIDTH = 4000;
 const WORLD_HEIGHT = 600;
 const HOUSE_SPACING = 400;
 const HOUSE_START_X = 200;
 const GROUND_Y = 450;
-const NEO_SPEED = 150; // px/sec
+const DEFAULT_NEO_SPEED = 150; // px/sec
 const CAMERA_LERP = 0.1;
 
 export class PipelineScene extends Phaser.Scene {
@@ -73,10 +74,19 @@ export class PipelineScene extends Phaser.Scene {
   update(_time: number, delta: number): void {
     if (!this.neo) return;
 
+    // Read live settings
+    const settings = useSettingsStore.getState();
+    const neoSpeed = settings.animation.neoSpeed;
+
+    // Sync effect toggles
+    this.neoTrail.setEnabled(settings.effects.neoTrail);
+    this.ambientParticles.setEnabled(settings.effects.particles);
+    this.glitchEffect.setEnabled(!settings.effects.reduceMotion && settings.effects.glitch);
+
     if (this.isMoving && this.targetX !== null) {
       const dx = this.targetX - this.neo.x;
       const dist = Math.abs(dx);
-      const step = (NEO_SPEED * delta) / 1000;
+      const step = (neoSpeed * delta) / 1000;
 
       if (dist <= step) {
         // Arrived at target

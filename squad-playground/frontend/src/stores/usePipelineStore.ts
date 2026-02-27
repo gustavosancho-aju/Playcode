@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 import type { AgentId } from 'shared/types';
 
+interface ApprovalData {
+  agentId: AgentId;
+  artifactName: string;
+  artifactContent: string;
+}
+
 interface PipelineStore {
   sessionId: string | null;
   status: 'idle' | 'executing' | 'approval_required' | 'completed' | 'error';
@@ -10,6 +16,7 @@ interface PipelineStore {
   message: string | null;
   error: string | null;
   artifacts: string[];
+  pendingApproval: ApprovalData | null;
 
   setSession: (sessionId: string) => void;
   updateProgress: (data: {
@@ -20,7 +27,8 @@ interface PipelineStore {
     message?: string;
     artifactPath?: string;
   }) => void;
-  setApprovalRequired: (agent: AgentId) => void;
+  setApprovalRequired: (agent: AgentId, artifactName: string, artifactContent: string) => void;
+  clearApproval: () => void;
   setCompleted: (artifacts: string[]) => void;
   setError: (error: string) => void;
   reset: () => void;
@@ -35,6 +43,7 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
   message: null,
   error: null,
   artifacts: [],
+  pendingApproval: null,
 
   setSession: (sessionId) =>
     set({ sessionId, status: 'executing', error: null }),
@@ -46,13 +55,21 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
       currentAgent: data.agent,
       message: data.message || null,
       status: 'executing',
+      pendingApproval: null,
     }),
 
-  setApprovalRequired: (agent) =>
-    set({ status: 'approval_required', currentAgent: agent }),
+  setApprovalRequired: (agent, artifactName, artifactContent) =>
+    set({
+      status: 'approval_required',
+      currentAgent: agent,
+      pendingApproval: { agentId: agent, artifactName, artifactContent },
+    }),
+
+  clearApproval: () =>
+    set({ pendingApproval: null, status: 'executing' }),
 
   setCompleted: (artifacts) =>
-    set({ status: 'completed', artifacts, currentAgent: null }),
+    set({ status: 'completed', artifacts, currentAgent: null, pendingApproval: null }),
 
   setError: (error) =>
     set({ status: 'error', error }),
@@ -67,5 +84,6 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
       message: null,
       error: null,
       artifacts: [],
+      pendingApproval: null,
     }),
 }));

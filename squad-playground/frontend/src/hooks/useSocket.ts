@@ -72,8 +72,12 @@ export function useSocket() {
       usePipelineStore.getState().setSession(data.sessionId);
     });
 
-    socket.on('approval-required', (data: { agent: string }) => {
-      usePipelineStore.getState().setApprovalRequired(data.agent as AgentId);
+    socket.on('approval-required', (data: { agent: string; artifactName?: string; artifactContent?: string }) => {
+      usePipelineStore.getState().setApprovalRequired(
+        data.agent as AgentId,
+        data.artifactName || '',
+        data.artifactContent || '',
+      );
     });
 
     socket.on('pipeline-complete', (data: { artifacts: string[] }) => {
@@ -93,9 +97,15 @@ export function useSocket() {
     socketRef.current?.emit('ping');
   }, []);
 
-  const approveStep = useCallback((approved: boolean, feedback?: string) => {
-    socketRef.current?.emit('pipeline-approve', { approved, feedback });
+  const approveStep = useCallback(() => {
+    socketRef.current?.emit('pipeline-approve', { approved: true });
+    usePipelineStore.getState().clearApproval();
   }, []);
 
-  return { sendPing, approveStep };
+  const rollbackStep = useCallback(() => {
+    socketRef.current?.emit('pipeline-rollback');
+    usePipelineStore.getState().clearApproval();
+  }, []);
+
+  return { sendPing, approveStep, rollbackStep };
 }

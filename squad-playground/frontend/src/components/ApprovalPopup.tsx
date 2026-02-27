@@ -1,0 +1,141 @@
+import { useEffect, useCallback } from 'react';
+import { usePipelineStore } from '../stores/usePipelineStore';
+import { useGameStore } from '../stores/useGameStore';
+import { useSocket } from '../hooks/useSocket';
+import { AGENT_DEFINITIONS } from 'shared/types';
+
+export function ApprovalPopup() {
+  const pendingApproval = usePipelineStore((s) => s.pendingApproval);
+  const { approveStep, rollbackStep } = useSocket();
+  const setTimerRunning = useGameStore((s) => s.setTimerRunning);
+
+  const agent = pendingApproval
+    ? AGENT_DEFINITIONS.find((a) => a.id === pendingApproval.agentId)
+    : null;
+
+  // Pause timer when popup visible
+  useEffect(() => {
+    if (pendingApproval) {
+      setTimerRunning(false);
+    }
+  }, [pendingApproval, setTimerRunning]);
+
+  const handleApprove = useCallback(() => {
+    approveStep();
+    setTimerRunning(true);
+  }, [approveStep, setTimerRunning]);
+
+  const handleEdit = useCallback(() => {
+    // Story 4.2 will implement inline editor — for now just approve
+    console.log('[ApprovalPopup] Edit requested — stub (Story 4.2)');
+  }, []);
+
+  const handleBack = useCallback(() => {
+    rollbackStep();
+    setTimerRunning(true);
+  }, [rollbackStep, setTimerRunning]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    if (!pendingApproval) return;
+
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleApprove();
+      } else if (e.key === 'e' || e.key === 'E') {
+        e.preventDefault();
+        handleEdit();
+      }
+      // Escape = keep paused (no action)
+    };
+
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [pendingApproval, handleApprove, handleEdit]);
+
+  if (!pendingApproval || !agent) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Dark backdrop — no dismiss on click */}
+      <div className="absolute inset-0 bg-black/80" />
+
+      {/* Modal */}
+      <div
+        className="relative z-10 w-full max-w-2xl mx-4 border rounded-lg overflow-hidden"
+        style={{ borderColor: agent.color, backgroundColor: 'rgba(13, 13, 13, 0.95)' }}
+      >
+        {/* Header */}
+        <div
+          className="flex items-center gap-3 px-6 py-4 border-b"
+          style={{ borderColor: agent.color }}
+        >
+          <span className="text-3xl">{agent.icon}</span>
+          <div>
+            <h2 className="text-lg font-bold font-mono" style={{ color: agent.color }}>
+              {agent.name}
+            </h2>
+            <p className="text-gray-400 text-xs font-mono">{agent.role} — Aprovação necessária</p>
+          </div>
+          <div className="ml-auto">
+            <span
+              className="inline-block w-3 h-3 rounded-full animate-pulse"
+              style={{ backgroundColor: agent.color }}
+            />
+          </div>
+        </div>
+
+        {/* Artifact preview */}
+        <div className="px-6 py-4 max-h-[400px] overflow-y-auto">
+          {pendingApproval.artifactName && (
+            <div className="mb-3 flex items-center gap-2">
+              <span className="text-yellow-400 text-sm">📄</span>
+              <span className="text-gray-300 font-mono text-sm">{pendingApproval.artifactName}</span>
+            </div>
+          )}
+          {pendingApproval.artifactContent ? (
+            <pre className="text-gray-300 font-mono text-xs leading-relaxed whitespace-pre-wrap bg-black/50 rounded p-4 border border-gray-800">
+              {pendingApproval.artifactContent.length > 2000
+                ? pendingApproval.artifactContent.slice(0, 2000) + '\n\n... (conteúdo truncado para preview)'
+                : pendingApproval.artifactContent}
+            </pre>
+          ) : (
+            <p className="text-gray-500 font-mono text-sm italic">
+              Artefato sendo processado...
+            </p>
+          )}
+        </div>
+
+        {/* Action buttons */}
+        <div className="px-6 py-4 border-t border-gray-800 flex items-center gap-3">
+          <button
+            onClick={handleApprove}
+            className="flex-1 px-4 py-2.5 bg-matrix-green/20 border border-matrix-green text-matrix-green font-mono text-sm rounded hover:bg-matrix-green hover:text-matrix-black transition-colors duration-200"
+          >
+            ✓ Aprovar <span className="text-xs opacity-60 ml-1">(Enter)</span>
+          </button>
+          <button
+            onClick={handleEdit}
+            className="flex-1 px-4 py-2.5 bg-yellow-500/10 border border-yellow-500 text-yellow-400 font-mono text-sm rounded hover:bg-yellow-500 hover:text-black transition-colors duration-200"
+          >
+            ✎ Editar <span className="text-xs opacity-60 ml-1">(E)</span>
+          </button>
+          <button
+            onClick={handleBack}
+            className="flex-1 px-4 py-2.5 bg-red-500/10 border border-red-600 text-red-400 font-mono text-sm rounded hover:bg-red-600 hover:text-white transition-colors duration-200"
+          >
+            ↩ Voltar <span className="text-xs opacity-60 ml-1">(Esc)</span>
+          </button>
+        </div>
+
+        {/* Keyboard hint */}
+        <div className="px-6 py-2 bg-black/50 text-center">
+          <span className="text-gray-600 font-mono text-[10px]">
+            Enter = Aprovar · E = Editar · Esc = Manter pausado
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}

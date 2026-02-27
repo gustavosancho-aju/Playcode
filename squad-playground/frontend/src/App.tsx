@@ -6,6 +6,7 @@ import { ProgressBar } from './components/ProgressBar';
 import { MessageBubble } from './components/MessageBubble';
 import { ErrorToast } from './components/ErrorToast';
 import { GameHUD } from './components/GameHUD';
+import { ApprovalPopup } from './components/ApprovalPopup';
 import { BottomBar } from './components/BottomBar';
 import { useSocket } from './hooks/useSocket';
 import { useConnectionStore } from './stores/useConnectionStore';
@@ -20,6 +21,7 @@ export default function App() {
       <LoadingScreen />
       <ErrorToast />
       <GameHUD />
+      <ApprovalPopup />
 
       <div className="relative z-10 min-h-screen bg-transparent text-white flex flex-col items-center gap-6 py-8 pb-16">
         <Title />

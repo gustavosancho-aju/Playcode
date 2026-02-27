@@ -29,6 +29,7 @@ interface PipelineStore {
   }) => void;
   setApprovalRequired: (agent: AgentId, artifactName: string, artifactContent: string) => void;
   clearApproval: () => void;
+  handleRollback: (targetStep: number, targetAgent: AgentId) => void;
   setCompleted: (artifacts: string[]) => void;
   setError: (error: string) => void;
   reset: () => void;
@@ -67,6 +68,15 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
 
   clearApproval: () =>
     set({ pendingApproval: null, status: 'executing' }),
+
+  handleRollback: (targetStep, targetAgent) =>
+    set({
+      status: 'executing',
+      currentStep: targetStep,
+      currentAgent: targetAgent,
+      pendingApproval: null,
+      error: null,
+    }),
 
   setCompleted: (artifacts) =>
     set({ status: 'completed', artifacts, currentAgent: null, pendingApproval: null }),

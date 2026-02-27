@@ -213,6 +213,175 @@ export class PipelineOrchestrator {
     }
   }
 
+  async rollbackPipeline(targetStep?: number): Promise<void> {
+    if (!this.state) return;
+
+    // Default: rollback to previous step
+    const target = targetStep ?? Math.max(0, this.state.currentStepIndex - 1);
+
+    if (target < 0 || target >= this.state.steps.length) return;
+
+    logger.info(`Pipeline rollback: step ${this.state.currentStepIndex} → ${target}`);
+
+    // Mark target and subsequent steps as pending
+    for (let i = target; i < this.state.steps.length; i++) {
+      this.state.steps[i].status = 'pending';
+      this.state.steps[i].startedAt = null;
+      this.state.steps[i].completedAt = null;
+      // Preserve artifactPath for steps before target (AC: 2)
+      if (i >= target) {
+        this.state.steps[i].artifactPath = null;
+      }
+    }
+
+    this.state.currentStepIndex = target;
+    this.state.status = 'executing';
+    this.state.error = null;
+    await this.saveState();
+
+    // Broadcast rollback event
+    this.broadcast('pipeline-rollback', {
+      sessionId: this.state.sessionId,
+      targetStep: target,
+      targetAgent: this.state.steps[target].agentId,
+    });
+
+    // If approval was pending, reject it to unblock the loop
+    if (this.pendingApproval) {
+      this.pendingApproval(false);
+      this.pendingApproval = null;
+    }
+
+    // Re-execute from target step
+    const previousOutput = await this.getPreviousOutput(target);
+    this.resumeFromStep(target, previousOutput).catch((err) => {
+      logger.error(`Rollback re-execution failed: ${err.message}`);
+    });
+  }
+
+  private async getPreviousOutput(stepIndex: number): Promise<string> {
+    if (stepIndex === 0 || !this.state) return '';
+
+    // Try to read artifact from previous step
+    const prevStep = this.state.steps[stepIndex - 1];
+    if (prevStep.artifactPath) {
+      const prevAgent = prevStep.agentId;
+      const agentDef = PIPELINE_ORDER_VAL.indexOf(prevAgent);
+      if (agentDef >= 0) {
+        const content = await artifactManager.getArtifact(
+          this.state.sessionId,
+          prevStep.artifactPath.split('/').pop() || ''
+        );
+        if (content) return content;
+      }
+    }
+    return '';
+  }
+
+  private async resumeFromStep(fromStep: number, initialInput: string): Promise<void> {
+    if (!this.state) return;
+
+    let previousOutput = initialInput;
+    const steps = this.state.steps;
+
+    for (let i = fromStep; i < steps.length; i++) {
+      this.state.currentStepIndex = i;
+      const step = steps[i];
+      const agentId = step.agentId;
+
+      // Check approval
+      if (this.config.approvalRequired[agentId]) {
+        this.state.status = 'approval_required';
+        await this.saveState();
+
+        // Read current artifact content for preview
+        let artifactContent = '';
+        if (i > 0) {
+          const prevStep = steps[i - 1];
+          if (prevStep.artifactPath) {
+            const fname = prevStep.artifactPath.split('/').pop() || '';
+            artifactContent = await artifactManager.getArtifact(this.state.sessionId, fname) || '';
+          }
+        }
+
+        this.broadcast('approval-required', {
+          agent: agentId,
+          sessionId: this.state.sessionId,
+          step: i + 1,
+          totalSteps: steps.length,
+          artifactName: artifactContent ? steps[i - 1]?.artifactPath?.split('/').pop() : '',
+          artifactContent,
+        });
+
+        const approved = await this.waitForApproval();
+        if (!approved) continue;
+        this.state.status = 'executing';
+      }
+
+      step.status = 'executing';
+      step.startedAt = new Date().toISOString();
+      await this.saveState();
+
+      this.broadcast('pipeline-update', {
+        agent: agentId,
+        status: 'processing',
+        step: i + 1,
+        totalSteps: steps.length,
+        message: `${agentId} processando...`,
+      });
+
+      try {
+        const systemPrompt = this.loadAgentPrompt(agentId);
+        const result = await this.executeAgent(agentId, previousOutput, systemPrompt);
+
+        const parsed = parseAgentOutput(result);
+        if (parsed.output) {
+          step.artifactPath = await artifactManager.saveArtifact(
+            this.state.sessionId, agentId, parsed.output.filename, parsed.output.content
+          );
+        } else {
+          step.artifactPath = await artifactManager.saveArtifact(
+            this.state.sessionId, agentId, this.getFallbackFilename(agentId, i), result
+          );
+        }
+
+        step.status = 'completed';
+        step.completedAt = new Date().toISOString();
+        previousOutput = result;
+
+        this.broadcast('pipeline-update', {
+          agent: agentId,
+          status: 'done',
+          step: i + 1,
+          totalSteps: steps.length,
+          message: `${agentId} concluído`,
+          artifactPath: step.artifactPath,
+        });
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error);
+        step.status = 'error';
+        this.state.status = 'error';
+        this.state.error = `Agent ${agentId} failed: ${msg}`;
+        await this.saveState();
+        this.broadcast('pipeline-error', { agent: agentId, error: msg, step: i + 1, totalSteps: steps.length });
+        logger.error(`Pipeline error at ${agentId}: ${msg}`);
+        return;
+      }
+
+      await this.saveState();
+    }
+
+    // Pipeline complete
+    this.state.status = 'completed';
+    this.state.completedAt = new Date().toISOString();
+    await this.saveState();
+
+    const duration = Date.now() - new Date(this.state.startedAt).getTime();
+    const artifacts = steps.filter((s) => s.artifactPath).map((s) => s.artifactPath as string);
+    this.broadcast('pipeline-complete', { sessionId: this.state.sessionId, duration, artifacts });
+    logger.info(`Pipeline completed after rollback: session=${this.state.sessionId}`);
+  }
+
   private waitForApproval(): Promise<boolean> {
     return new Promise((resolve) => {
       this.pendingApproval = (approved: boolean) => resolve(approved);

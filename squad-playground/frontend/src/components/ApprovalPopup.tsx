@@ -34,6 +34,10 @@ export function ApprovalPopup() {
   }, []);
 
   const handleBack = useCallback(() => {
+    const prevIndex = usePipelineStore.getState().currentStep - 1;
+    const prevAgent = prevIndex >= 0 ? AGENT_DEFINITIONS[prevIndex] : null;
+    const name = prevAgent?.name || 'anterior';
+    if (!window.confirm(`Voltar para ${name}?`)) return;
     rollbackStep();
     setTimerRunning(true);
   }, [rollbackStep, setTimerRunning]);

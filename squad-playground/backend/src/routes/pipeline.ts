@@ -55,6 +55,12 @@ export function createPipelineRouter(io: Server): Router {
     socket.on('pipeline-approve', (data: { approved: boolean; feedback?: string }) => {
       orchestrator!.handleApproval(data.approved, data.feedback);
     });
+
+    socket.on('pipeline-rollback', (data?: { targetStep?: number }) => {
+      orchestrator!.rollbackPipeline(data?.targetStep).catch((err) => {
+        logger.error(`Rollback failed: ${err.message}`);
+      });
+    });
   });
 
   return router;

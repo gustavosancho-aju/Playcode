@@ -3,6 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import { useConnectionStore } from '../stores/useConnectionStore';
 import { useAgentStore } from '../stores/useAgentStore';
 import { usePipelineStore } from '../stores/usePipelineStore';
+import { useGameStore } from '../stores/useGameStore';
 import type { AgentId, AgentStatus } from 'shared/types';
 
 const SOCKET_URL = 'http://localhost:3000';
@@ -78,6 +79,36 @@ export function useSocket() {
         data.artifactName || '',
         data.artifactContent || '',
       );
+    });
+
+    socket.on('pipeline-rollback', (data: { targetStep: number; targetAgent: string }) => {
+      usePipelineStore.getState().handleRollback(data.targetStep, data.targetAgent as AgentId);
+      // Decrease game stats on rollback
+      const gameStore = useGameStore.getState();
+      const currentStep = usePipelineStore.getState().currentStep;
+      const stepsRolledBack = currentStep - data.targetStep;
+      if (stepsRolledBack > 0) {
+        for (let i = 0; i < stepsRolledBack; i++) {
+          // Decrease stages and artifacts
+          const gs = useGameStore.getState();
+          if (gs.stagesCompleted > 0) {
+            useGameStore.setState({
+              stagesCompleted: gs.stagesCompleted - 1,
+              artifactsCollected: Math.max(0, gs.artifactsCollected - 1),
+            });
+          }
+        }
+      }
+      // Reset agent statuses for rolled-back agents
+      const agents = useAgentStore.getState().agents;
+      const pipelineOrder = ['pesquisa', 'organizador', 'solucoes', 'estruturas', 'financeiro', 'closer', 'apresentacao'];
+      for (let i = data.targetStep; i < pipelineOrder.length; i++) {
+        useAgentStore.getState().updateAgent(pipelineOrder[i] as AgentId, {
+          status: 'idle',
+          message: null,
+          artifactPath: null,
+        });
+      }
     });
 
     socket.on('pipeline-complete', (data: { artifacts: string[] }) => {

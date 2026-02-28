@@ -19,6 +19,7 @@ interface PipelineStore {
   error: string | null;
   artifacts: string[];
   pendingApproval: ApprovalData | null;
+  themeSelectionRequired: boolean;
 
   setSession: (sessionId: string) => void;
   updateProgress: (data: {
@@ -35,6 +36,7 @@ interface PipelineStore {
   handleRollback: (targetStep: number, targetAgent: AgentId) => void;
   setCompleted: (artifacts: string[]) => void;
   setError: (error: string) => void;
+  setThemeSelectionRequired: (required: boolean) => void;
   reset: () => void;
 }
 
@@ -50,6 +52,7 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
   error: null,
   artifacts: [],
   pendingApproval: null,
+  themeSelectionRequired: false,
 
   setSession: (sessionId) =>
     set({ sessionId, status: 'executing', error: null, allTasks: {} }),
@@ -96,6 +99,9 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
   setError: (error) =>
     set({ status: 'error', error }),
 
+  setThemeSelectionRequired: (required) =>
+    set({ themeSelectionRequired: required }),
+
   reset: () =>
     set({
       sessionId: null,
@@ -109,5 +115,6 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
       error: null,
       artifacts: [],
       pendingApproval: null,
+      themeSelectionRequired: false,
     }),
 }));

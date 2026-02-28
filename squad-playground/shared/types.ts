@@ -30,7 +30,7 @@ export const AGENT_DEFINITIONS: AgentDefinition[] = [
     name: 'Master CEO',
     role: 'Orquestrador',
     color: '#8B5CF6',
-    icon: '👑',
+    icon: '◈',
     promptFile: 'master.md',
     outputFile: '',
     inputFrom: 'user',
@@ -41,7 +41,7 @@ export const AGENT_DEFINITIONS: AgentDefinition[] = [
     name: 'Pesquisa',
     role: 'Investigador',
     color: '#2563EB',
-    icon: '📚',
+    icon: '⟐',
     promptFile: 'pesquisa.md',
     outputFile: '01-briefing-previo.md',
     inputFrom: 'master',
@@ -52,7 +52,7 @@ export const AGENT_DEFINITIONS: AgentDefinition[] = [
     name: 'Organizador',
     role: 'Curador',
     color: '#059669',
-    icon: '📋',
+    icon: '⬡',
     promptFile: 'organizador.md',
     outputFile: '02-briefing-organizado.md',
     inputFrom: 'pesquisa',
@@ -63,7 +63,7 @@ export const AGENT_DEFINITIONS: AgentDefinition[] = [
     name: 'Soluções',
     role: 'Visionário',
     color: '#F59E0B',
-    icon: '💡',
+    icon: '⟡',
     promptFile: 'solucoes.md',
     outputFile: '03-ideias-solucoes.md',
     inputFrom: 'organizador',
@@ -74,7 +74,7 @@ export const AGENT_DEFINITIONS: AgentDefinition[] = [
     name: 'Estruturas',
     role: 'Arquiteto',
     color: '#374151',
-    icon: '🏗️',
+    icon: '⎔',
     promptFile: 'estruturas.md',
     outputFile: '04-estruturas-produtos.md',
     inputFrom: 'solucoes',
@@ -85,7 +85,7 @@ export const AGENT_DEFINITIONS: AgentDefinition[] = [
     name: 'Financeiro',
     role: 'Analista',
     color: '#10B981',
-    icon: '💰',
+    icon: '◇',
     promptFile: 'financeiro.md',
     outputFile: '05-analise-financeira.md',
     inputFrom: 'estruturas',
@@ -96,7 +96,7 @@ export const AGENT_DEFINITIONS: AgentDefinition[] = [
     name: 'Closer',
     role: 'Persuasor',
     color: '#DC2626',
-    icon: '✍️',
+    icon: '⟁',
     promptFile: 'closer.md',
     outputFile: '06-proposta-comercial.md',
     inputFrom: 'financeiro',
@@ -107,7 +107,7 @@ export const AGENT_DEFINITIONS: AgentDefinition[] = [
     name: 'Apresentação',
     role: 'Designer',
     color: '#EC4899',
-    icon: '🎨',
+    icon: '⬢',
     promptFile: 'apresentacao.md',
     outputFile: '07-landing-spec.md',
     inputFrom: 'closer',
@@ -260,6 +260,124 @@ export const PIPELINE_ORDER: AgentId[] = [
   'apresentacao',
 ];
 
+// --- Landing Page Themes ---
+
+export interface LandingTheme {
+  id: string;
+  name: string;
+  description: string;
+  font: string;
+  fontUrl: string;
+  colors: {
+    primary: string;
+    primaryDark: string;
+    bgDark: string;
+    bgLight: string;
+    textDark: string;
+    textLight: string;
+    accent: string;
+  };
+  style: string; // Brief style description for the agent
+}
+
+export const LANDING_THEMES: LandingTheme[] = [
+  {
+    id: 'neon-hacker',
+    name: 'Neon Hacker',
+    description: 'Cyberpunk escuro com glow neon verde, grid futurista e efeitos de brilho',
+    font: 'Inter',
+    fontUrl: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap',
+    colors: {
+      primary: '#22c55e',
+      primaryDark: '#166534',
+      bgDark: '#0f172a',
+      bgLight: '#f8fafc',
+      textDark: '#1e293b',
+      textLight: '#f8fafc',
+      accent: '#06b6d4',
+    },
+    style: 'Dark cyberpunk com hero escuro, grid lines no background, glow effects em botões, bordas neon, cards com glassmorphism. Estilo hacker/tech.',
+  },
+  {
+    id: 'corporate-blue',
+    name: 'Corporate Blue',
+    description: 'Profissional e limpo com azul corporativo, cards com sombra e layout estruturado',
+    font: 'Plus Jakarta Sans',
+    fontUrl: 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap',
+    colors: {
+      primary: '#2563eb',
+      primaryDark: '#1d4ed8',
+      bgDark: '#0f172a',
+      bgLight: '#ffffff',
+      textDark: '#1e293b',
+      textLight: '#f8fafc',
+      accent: '#3b82f6',
+    },
+    style: 'Clean corporativo com fundo branco, hero com gradiente azul sutil, cards com box-shadow, tipografia profissional. Header fixo com navegação. Estilo empresarial confiável.',
+  },
+  {
+    id: 'sunset-warm',
+    name: 'Sunset Warm',
+    description: 'Gradientes quentes em laranja e coral, formas orgânicas e visual acolhedor',
+    font: 'DM Sans',
+    fontUrl: 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap',
+    colors: {
+      primary: '#f97316',
+      primaryDark: '#ea580c',
+      bgDark: '#1c1917',
+      bgLight: '#fffbeb',
+      textDark: '#292524',
+      textLight: '#fef3c7',
+      accent: '#ef4444',
+    },
+    style: 'Gradientes quentes (laranja→coral), fundo creme claro, formas arredondadas (border-radius grandes), blob shapes decorativos, visual friendly e acolhedor. Botões com gradiente warm.',
+  },
+  {
+    id: 'minimal-mono',
+    name: 'Minimal Mono',
+    description: 'Ultra minimalista em preto e branco, tipografia grande e muito espaço em branco',
+    font: 'Space Grotesk',
+    fontUrl: 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap',
+    colors: {
+      primary: '#171717',
+      primaryDark: '#0a0a0a',
+      bgDark: '#0a0a0a',
+      bgLight: '#fafafa',
+      textDark: '#171717',
+      textLight: '#fafafa',
+      accent: '#6b7280',
+    },
+    style: 'Ultra minimalista: fundo branco puro, sem gradientes, sem sombras pesadas. Tipografia GRANDE (h1 72px+), muito whitespace, linhas finas como separadores. Accent em cinza. Sem cards — layout flat. Botões com borda fina preta.',
+  },
+  {
+    id: 'luxury-gold',
+    name: 'Luxury Gold',
+    description: 'Premium elegante com dourado, fundo escuro e tipografia serif sofisticada',
+    font: 'Playfair Display',
+    fontUrl: 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Lato:wght@300;400;700&display=swap',
+    colors: {
+      primary: '#d4a853',
+      primaryDark: '#b8942e',
+      bgDark: '#1a1a1a',
+      bgLight: '#faf9f6',
+      textDark: '#1a1a1a',
+      textLight: '#f5f0e8',
+      accent: '#c9a84c',
+    },
+    style: 'Luxury premium: fundo escuro (#1a1a1a), headings em Playfair Display (serif), body em Lato (sans-serif). Dourado como accent, bordas finas douradas, gradientes sutis preto→dourado. Sem border-radius (quadrado). Elegante e sofisticado.',
+  },
+];
+
+// --- Knowledge Documents ---
+
+export interface AgentKnowledgeDoc {
+  id: string;
+  filename: string;
+  originalName: string;
+  size: number;
+  uploadedAt: string;
+}
+
 // --- Team Structure ---
 
 export interface AgentGroup {
@@ -270,9 +388,9 @@ export interface AgentGroup {
 }
 
 export const AGENT_GROUPS: AgentGroup[] = [
-  { label: 'Orquestração', icon: '👑', color: '#8B5CF6', agents: ['master'] },
-  { label: 'Pesquisa & Análise', icon: '🔍', color: '#2563EB', agents: ['pesquisa'] },
-  { label: 'Estratégia & Organização', icon: '📋', color: '#059669', agents: ['organizador', 'solucoes'] },
-  { label: 'Arquitetura & Finanças', icon: '🏗️', color: '#374151', agents: ['estruturas', 'financeiro'] },
-  { label: 'Vendas & Apresentação', icon: '🎯', color: '#DC2626', agents: ['closer', 'apresentacao'] },
+  { label: 'Orquestração', icon: '◈', color: '#8B5CF6', agents: ['master'] },
+  { label: 'Pesquisa & Análise', icon: '⟐', color: '#2563EB', agents: ['pesquisa'] },
+  { label: 'Estratégia & Organização', icon: '⬡', color: '#059669', agents: ['organizador', 'solucoes'] },
+  { label: 'Arquitetura & Finanças', icon: '⎔', color: '#374151', agents: ['estruturas', 'financeiro'] },
+  { label: 'Vendas & Apresentação', icon: '⟁', color: '#DC2626', agents: ['closer', 'apresentacao'] },
 ];

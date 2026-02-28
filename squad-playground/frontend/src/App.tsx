@@ -17,6 +17,7 @@ import { TeamStructure } from './components/TeamStructure';
 import { TaskBoard } from './components/TaskBoard';
 import { ProjectHistory } from './components/ProjectHistory';
 import { MemoryScreen } from './components/MemoryScreen';
+import { ThemeSelector } from './components/ThemeSelector';
 import { useSocket } from './hooks/useSocket';
 import { useConnectionStore } from './stores/useConnectionStore';
 import { useAgentStore } from './stores/useAgentStore';
@@ -51,10 +52,13 @@ const TAB_ITEMS: { id: AppTab; label: string; icon: string }[] = [
 ];
 
 export default function App() {
-  const { sendPing } = useSocket();
+  const { sendPing, selectTheme } = useSocket();
+  const themeSelectionRequired = usePipelineStore((s) => s.themeSelectionRequired);
   const lastPong = useConnectionStore((s) => s.lastPong);
   const demoRunning = useRef(false);
   const [activeTab, setActiveTab] = useState<AppTab>('pipeline');
+  const [showStarter, setShowStarter] = useState(false);
+  const pipelineStatus = usePipelineStore((s) => s.status);
 
   const runDemo = useCallback(async () => {
     if (demoRunning.current) return;
@@ -129,26 +133,34 @@ export default function App() {
       <ToastSystem />
       <ErrorToast />
       <GameHUD />
+      {themeSelectionRequired && (
+        <ThemeSelector
+          onSelect={(themeId) => {
+            selectTheme(themeId);
+            usePipelineStore.getState().setThemeSelectionRequired(false);
+          }}
+        />
+      )}
       <Suspense fallback={null}>
         <ApprovalPopup />
         <VictoryScreen />
       </Suspense>
 
       {/* Tab Navigation — premium glassmorphism navbar */}
-      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-0.5 glass rounded-2xl p-1 pointer-events-auto shadow-glass">
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-0.5 glass rounded-2xl p-1 pointer-events-auto shadow-glass max-w-[calc(100vw-2rem)]">
         {TAB_ITEMS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`
-              flex items-center gap-1.5 px-5 py-2 rounded-xl font-display text-xs font-medium tracking-wide transition-all duration-300
+              flex items-center gap-1.5 px-3 sm:px-5 py-2 rounded-xl font-display text-xs font-medium tracking-wide transition-all duration-300
               ${activeTab === tab.id
                 ? 'bg-white/[0.07] text-white shadow-glow'
                 : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'}
             `}
           >
             <span className="text-sm">{tab.icon}</span>
-            <span>{tab.label}</span>
+            <span className="hidden sm:inline">{tab.label}</span>
           </button>
         ))}
       </div>
@@ -165,28 +177,45 @@ export default function App() {
           <GameCanvas />
 
           {/* Overlay UI elements — centered between panels */}
-          <div className="relative z-10 pointer-events-none flex flex-col items-center gap-4 py-14 ml-[180px] mr-[260px]">
+          <div className="relative z-10 pointer-events-none flex flex-col items-center gap-4 py-14 mx-4 sm:ml-[180px] sm:mr-[260px]">
             <div className="pointer-events-auto">
               <Title />
             </div>
             <p className="text-gray-600 font-display text-xs tracking-widest">v0.4.0</p>
 
-            <PipelineStarter />
+            {/* Show starter popup or the CTA button */}
+            {pipelineStatus === 'idle' && !showStarter && (
+              <div className="pointer-events-auto flex flex-col items-center gap-4 mt-8">
+                <button
+                  onClick={() => setShowStarter(true)}
+                  className="px-8 py-3 rounded-xl font-display text-sm font-semibold transition-all duration-300"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(0,255,65,0.12), rgba(6,182,212,0.08))',
+                    border: '1px solid rgba(0,255,65,0.3)',
+                    color: '#00FF41',
+                    boxShadow: '0 0 30px rgba(0,255,65,0.1)',
+                  }}
+                >
+                  Iniciar Novo Projeto
+                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={runDemo}
+                    className="px-5 py-2 rounded-xl font-display text-xs font-medium text-yellow-400/70 border border-yellow-400/20 hover:bg-yellow-400/10 hover:text-yellow-300 hover:border-yellow-400/40 transition-all duration-300"
+                  >
+                    Demo
+                  </button>
+                  <button
+                    onClick={sendPing}
+                    className="px-5 py-2 rounded-xl font-display text-xs font-medium text-gray-500 border border-white/[0.06] hover:border-white/[0.12] hover:text-gray-300 hover:bg-white/[0.03] transition-all duration-300"
+                  >
+                    Ping
+                  </button>
+                </div>
+              </div>
+            )}
 
-            <div className="flex items-center gap-3 pointer-events-auto">
-              <button
-                onClick={runDemo}
-                className="px-5 py-2 rounded-xl font-display text-xs font-medium text-yellow-400/70 border border-yellow-400/20 hover:bg-yellow-400/10 hover:text-yellow-300 hover:border-yellow-400/40 transition-all duration-300"
-              >
-                Demo
-              </button>
-              <button
-                onClick={sendPing}
-                className="px-5 py-2 rounded-xl font-display text-xs font-medium text-gray-500 border border-white/[0.06] hover:border-white/[0.12] hover:text-gray-300 hover:bg-white/[0.03] transition-all duration-300"
-              >
-                Ping
-              </button>
-            </div>
+            {showStarter && pipelineStatus === 'idle' && <PipelineStarter />}
 
             <div className="pointer-events-auto w-full max-w-sm px-4">
               <ProgressBar />

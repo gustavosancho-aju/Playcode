@@ -1,5 +1,5 @@
 import { Server } from 'socket.io';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { claudeRemote } from '../integration/claude-remote';
 import { artifactManager } from '../artifacts/artifact-manager';
@@ -14,6 +14,7 @@ import type {
   DEFAULT_PIPELINE_CONFIG,
   PIPELINE_ORDER,
 } from 'shared/types';
+import { LANDING_THEMES } from 'shared/types';
 
 // Pipeline presets
 const PIPELINE_PRESETS: Record<string, { steps: AgentId[]; approvalRequired: Partial<Record<AgentId, boolean>> }> = {
@@ -45,6 +46,8 @@ export class PipelineOrchestrator {
   private config: PipelineConfig;
   private agentPromptsDir: string;
   private pendingApproval: ((approved: boolean, feedback?: string) => void) | null = null;
+  private pendingThemeSelection: ((themeId: string) => void) | null = null;
+  private selectedThemeId: string | null = null;
 
   constructor(io: Server, config?: Partial<PipelineConfig>) {
     this.io = io;
@@ -115,6 +118,14 @@ export class PipelineOrchestrator {
         this.state.currentStepIndex = i;
         const step = steps[i];
         const agentId = step.agentId;
+
+        // Theme selection before apresentacao
+        if (agentId === 'apresentacao' && !this.selectedThemeId) {
+          this.broadcast('layout-selection-required', { sessionId });
+          logger.info('Waiting for theme selection before apresentacao');
+          this.selectedThemeId = await this.waitForThemeSelection();
+          logger.info(`Theme selected: ${this.selectedThemeId}`);
+        }
 
         // Execute agent first
         step.status = 'executing';
@@ -286,6 +297,19 @@ export class PipelineOrchestrator {
     }
   }
 
+  handleThemeSelection(themeId: string): void {
+    if (this.pendingThemeSelection) {
+      this.pendingThemeSelection(themeId);
+      this.pendingThemeSelection = null;
+    }
+  }
+
+  private waitForThemeSelection(): Promise<string> {
+    return new Promise((resolve) => {
+      this.pendingThemeSelection = (themeId: string) => resolve(themeId);
+    });
+  }
+
   async rollbackPipeline(targetStep?: number): Promise<void> {
     if (!this.state) return;
 
@@ -363,6 +387,14 @@ export class PipelineOrchestrator {
       this.state.currentStepIndex = i;
       const step = steps[i];
       const agentId = step.agentId;
+
+      // Theme selection before apresentacao
+      if (agentId === 'apresentacao' && !this.selectedThemeId) {
+        this.broadcast('layout-selection-required', { sessionId: this.state.sessionId });
+        logger.info('Waiting for theme selection before apresentacao (resume)');
+        this.selectedThemeId = await this.waitForThemeSelection();
+        logger.info(`Theme selected: ${this.selectedThemeId}`);
+      }
 
       // Execute agent first
       step.status = 'executing';
@@ -528,13 +560,58 @@ export class PipelineOrchestrator {
   }
 
   private loadAgentPrompt(agentId: AgentId): string {
+    let prompt: string;
     try {
       const filePath = join(this.agentPromptsDir, `${agentId}.md`);
-      return readFileSync(filePath, 'utf-8');
+      prompt = readFileSync(filePath, 'utf-8');
     } catch {
       logger.warn(`No prompt file for ${agentId}, using default`);
-      return `You are the ${agentId} agent. Follow the pipeline protocol.`;
+      prompt = `You are the ${agentId} agent. Follow the pipeline protocol.`;
     }
+
+    // Inject selected theme for apresentacao agent
+    if (agentId === 'apresentacao' && this.selectedThemeId) {
+      const theme = LANDING_THEMES.find((t) => t.id === this.selectedThemeId);
+      if (theme) {
+        const themeBlock = [
+          `**Tema: ${theme.name}**`,
+          `- Fonte: ${theme.font} (${theme.fontUrl})`,
+          `- Cores CSS:`,
+          `  --primary: ${theme.colors.primary}`,
+          `  --primary-dark: ${theme.colors.primaryDark}`,
+          `  --bg-dark: ${theme.colors.bgDark}`,
+          `  --bg-light: ${theme.colors.bgLight}`,
+          `  --text-dark: ${theme.colors.textDark}`,
+          `  --text-light: ${theme.colors.textLight}`,
+          `  --accent: ${theme.colors.accent}`,
+          `- Estilo: ${theme.style}`,
+        ].join('\n');
+        prompt = prompt.replace('{LAYOUT_THEME}', themeBlock);
+      }
+    }
+
+    // Append knowledge documents if any exist
+    const knowledgeDir = join(this.agentPromptsDir, 'knowledge', agentId);
+    if (existsSync(knowledgeDir)) {
+      const files = readdirSync(knowledgeDir);
+      if (files.length > 0) {
+        const docs = files.map((f) => {
+          try {
+            const content = readFileSync(join(knowledgeDir, f), 'utf-8');
+            const originalName = f.split('-').slice(1).join('-');
+            return `### ${originalName}\n${content}`;
+          } catch {
+            return '';
+          }
+        }).filter(Boolean);
+
+        if (docs.length > 0) {
+          prompt += `\n\n## Base de Conhecimento\n\nDocumentos de referência fornecidos:\n\n${docs.join('\n\n---\n\n')}`;
+        }
+      }
+    }
+
+    return prompt;
   }
 
   private getFallbackFilename(agentId: AgentId, stepIndex: number): string {

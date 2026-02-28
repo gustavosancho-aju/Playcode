@@ -99,13 +99,19 @@ Pipeline concluído. Landing page HTML gerada com sucesso.
 - Sua resposta INTEIRA deve ser o artefato completo com as protocol tags
 - O sistema vai capturar o conteúdo entre [OUTPUT:07-landing-page.html] e [/OUTPUT]
 
+## Tema Visual Selecionado
+
+{LAYOUT_THEME}
+
+**REGRA OBRIGATÓRIA:** Você DEVE seguir EXATAMENTE o tema visual acima. Use as cores, fontes e estilo descritos. Não invente outro tema.
+
 ## Regras de Geração
 - HTML completo e funcional (single file, inline styles)
-- Design profissional — NÃO usar estilo genérico/template
+- Design profissional seguindo o TEMA SELECIONADO acima
 - Conteúdo REAL extraído dos artefatos anteriores (não placeholders)
 - Valores em BRL (R$) da análise financeira
 - Responsivo com flexbox/grid
-- Sem dependências externas além de Google Fonts
+- Sem dependências externas além de Google Fonts (use a fonte do tema)
 - Sections com IDs para navegação por âncora
 - Lighthouse performance 90+ (sem JS pesado, imagens otimizadas)
 - Mínimo 500 linhas de HTML — gere uma landing page COMPLETA e profissional

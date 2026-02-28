@@ -68,6 +68,11 @@ export function createPipelineRouter(io: Server): Router {
       });
     });
 
+    socket.on('layout-selected', (data: { themeId: string }) => {
+      orchestrator!.handleThemeSelection(data.themeId);
+      logger.info(`Layout theme selected: ${data.themeId}`);
+    });
+
     socket.on('update-pipeline-config', (data: { approvalRequired?: Record<string, boolean> }) => {
       if (data.approvalRequired) {
         orchestrator!.updateApprovalConfig(data.approvalRequired);

@@ -208,6 +208,10 @@ export function useSocket() {
       Object.keys(chunkCounts).forEach((k) => delete chunkCounts[k]);
     });
 
+    socket.on('layout-selection-required', () => {
+      usePipelineStore.getState().setThemeSelectionRequired(true);
+    });
+
     socket.on('approval-required', (data: { agent: string; artifactName?: string; artifactContent?: string }) => {
       usePipelineStore.getState().setApprovalRequired(
         data.agent as AgentId,
@@ -282,5 +286,9 @@ export function useSocket() {
     usePipelineStore.getState().clearApproval();
   }, []);
 
-  return { sendPing, approveStep, rollbackStep };
+  const selectTheme = useCallback((themeId: string) => {
+    socketRef.current?.emit('layout-selected', { themeId });
+  }, []);
+
+  return { sendPing, approveStep, rollbackStep, selectTheme, socketRef };
 }

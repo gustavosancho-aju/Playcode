@@ -74,9 +74,13 @@ export function parseAgentOutput(raw: string): ParsedAgentMessage {
   const tasks = parseTasks(raw);
 
   const outputMatch = OUTPUT_REGEX.exec(raw);
-  const output = outputMatch
-    ? { filename: outputMatch[1], content: outputMatch[2].trim() }
-    : null;
+  let output: { filename: string; content: string } | null = null;
+  if (outputMatch) {
+    let content = outputMatch[2].trim();
+    // Strip markdown code blocks (```html ... ``` or ``` ... ```)
+    content = content.replace(/^```\w*\n?/, '').replace(/\n?```$/, '').trim();
+    output = { filename: outputMatch[1], content };
+  }
 
   const handoffMatch = HANDOFF_REGEX.exec(raw);
   const handoff = handoffMatch

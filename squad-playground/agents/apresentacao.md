@@ -95,6 +95,7 @@ Pipeline concluído. Landing page HTML gerada com sucesso.
 - NÃO use ferramentas (Write, Edit, Bash, etc.)
 - NÃO peça permissão para salvar arquivos
 - NÃO diga "arquivo pronto para escrita" — GERE O CÓDIGO AQUI
+- NÃO envolva o HTML em code blocks (``` ou ```html) — gere o HTML DIRETAMENTE
 - Sua resposta INTEIRA deve ser o artefato completo com as protocol tags
 - O sistema vai capturar o conteúdo entre [OUTPUT:07-landing-page.html] e [/OUTPUT]
 

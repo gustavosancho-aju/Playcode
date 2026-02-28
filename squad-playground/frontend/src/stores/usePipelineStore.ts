@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { AgentId } from 'shared/types';
+import type { AgentId, Task } from 'shared/types';
 
 interface ApprovalData {
   agentId: AgentId;
@@ -13,6 +13,8 @@ interface PipelineStore {
   currentStep: number;
   totalSteps: number;
   currentAgent: AgentId | null;
+  currentTasks: Task[];
+  allTasks: Partial<Record<AgentId, Task[]>>;
   message: string | null;
   error: string | null;
   artifacts: string[];
@@ -27,6 +29,7 @@ interface PipelineStore {
     message?: string;
     artifactPath?: string;
   }) => void;
+  updateTasks: (agent: AgentId, tasks: Task[]) => void;
   setApprovalRequired: (agent: AgentId, artifactName: string, artifactContent: string) => void;
   clearApproval: () => void;
   handleRollback: (targetStep: number, targetAgent: AgentId) => void;
@@ -41,23 +44,32 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
   currentStep: 0,
   totalSteps: 7,
   currentAgent: null,
+  currentTasks: [],
+  allTasks: {},
   message: null,
   error: null,
   artifacts: [],
   pendingApproval: null,
 
   setSession: (sessionId) =>
-    set({ sessionId, status: 'executing', error: null }),
+    set({ sessionId, status: 'executing', error: null, allTasks: {} }),
 
   updateProgress: (data) =>
-    set({
+    set((state) => ({
       currentStep: data.step,
       totalSteps: data.totalSteps,
       currentAgent: data.agent,
+      currentTasks: state.currentAgent !== data.agent ? [] : state.currentTasks,
       message: data.message || null,
       status: 'executing',
       pendingApproval: null,
-    }),
+    })),
+
+  updateTasks: (agent, tasks) =>
+    set((state) => ({
+      currentTasks: tasks,
+      allTasks: { ...state.allTasks, [agent]: tasks },
+    })),
 
   setApprovalRequired: (agent, artifactName, artifactContent) =>
     set({
@@ -91,6 +103,8 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
       currentStep: 0,
       totalSteps: 7,
       currentAgent: null,
+      currentTasks: [],
+      allTasks: {},
       message: null,
       error: null,
       artifacts: [],

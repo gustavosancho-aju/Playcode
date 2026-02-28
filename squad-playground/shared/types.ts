@@ -153,6 +153,7 @@ export interface PipelineStep {
   artifactPath: string | null;
   startedAt: string | null;
   completedAt: string | null;
+  tasks?: Task[];
 }
 
 // --- Protocol Types ---
@@ -257,4 +258,21 @@ export const PIPELINE_ORDER: AgentId[] = [
   'financeiro',
   'closer',
   'apresentacao',
+];
+
+// --- Team Structure ---
+
+export interface AgentGroup {
+  label: string;
+  icon: string;
+  color: string;
+  agents: AgentId[];
+}
+
+export const AGENT_GROUPS: AgentGroup[] = [
+  { label: 'Orquestração', icon: '👑', color: '#8B5CF6', agents: ['master'] },
+  { label: 'Pesquisa & Análise', icon: '🔍', color: '#2563EB', agents: ['pesquisa'] },
+  { label: 'Estratégia & Organização', icon: '📋', color: '#059669', agents: ['organizador', 'solucoes'] },
+  { label: 'Arquitetura & Finanças', icon: '🏗️', color: '#374151', agents: ['estruturas', 'financeiro'] },
+  { label: 'Vendas & Apresentação', icon: '🎯', color: '#DC2626', agents: ['closer', 'apresentacao'] },
 ];

@@ -95,6 +95,13 @@ export function useSocket() {
       }
     });
 
+    socket.on('agent-tasks', (data: { agent: string; tasks: Array<{ text: string; status: string }> }) => {
+      usePipelineStore.getState().updateTasks(
+        data.agent as AgentId,
+        data.tasks as Array<{ text: string; status: 'pending' | 'in_progress' | 'completed' }>,
+      );
+    });
+
     socket.on('pipeline-started', (data: { sessionId: string }) => {
       usePipelineStore.getState().setSession(data.sessionId);
     });

@@ -23,7 +23,7 @@ function extractMessage(raw: string): string {
   return msg.trim();
 }
 
-function parseTasks(raw: string): Task[] {
+export function parseTasks(raw: string): Task[] {
   const tasksMatch = TASKS_REGEX.exec(raw);
   if (!tasksMatch) return [];
 

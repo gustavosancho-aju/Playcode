@@ -4,6 +4,7 @@ import { createSocketServer } from './server/socket';
 import { createMockRouter } from './routes/mock';
 import { claudeRouter } from './routes/claude';
 import { artifactsRouter } from './routes/artifacts';
+import { sessionsRouter } from './routes/sessions';
 import { createPipelineRouter } from './routes/pipeline';
 import { env } from './config/env';
 import { logger } from './utils/logger';
@@ -14,6 +15,7 @@ const io = createSocketServer(server);
 app.use(createMockRouter(io));
 app.use(claudeRouter);
 app.use(artifactsRouter);
+app.use(sessionsRouter);
 app.use(createPipelineRouter(io));
 
 export { io };

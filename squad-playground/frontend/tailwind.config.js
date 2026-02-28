@@ -37,6 +37,7 @@ export default {
       animation: {
         'pulse-glow': 'pulseGlow 2s ease-in-out infinite',
         'float-up': 'floatUp 1s ease-out forwards',
+        'fade-in': 'fadeIn 0.2s ease-out forwards',
       },
       keyframes: {
         pulseGlow: {
@@ -46,6 +47,10 @@ export default {
         floatUp: {
           '0%': { transform: 'translateY(0)', opacity: '1' },
           '100%': { transform: 'translateY(-20px)', opacity: '0' },
+        },
+        fadeIn: {
+          '0%': { opacity: '0', transform: 'translateY(4px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         },
       },
     },

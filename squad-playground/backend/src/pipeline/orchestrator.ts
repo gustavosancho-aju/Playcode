@@ -3,7 +3,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { claudeRemote } from '../integration/claude-remote';
 import { artifactManager } from '../artifacts/artifact-manager';
-import { parseAgentOutput } from '../parser/agent-parser';
+import { parseAgentOutput, parseTasks } from '../parser/agent-parser';
 import { logger } from '../utils/logger';
 import type {
   AgentId,
@@ -493,6 +493,7 @@ export class PipelineOrchestrator {
 
   private async executeAgent(agentId: AgentId, input: string, systemPrompt: string): Promise<string> {
     let fullResponse = '';
+    let lastTasksJson = '';
 
     for await (const event of claudeRemote.sendCommand(input, systemPrompt, {
       timeout: this.config.agentTimeout,
@@ -505,6 +506,19 @@ export class PipelineOrchestrator {
           agent: agentId,
           chunk: event.content,
         });
+
+        // Incremental task parsing — detect [TASKS] block changes
+        const tasks = parseTasks(fullResponse);
+        if (tasks.length > 0) {
+          const tasksJson = JSON.stringify(tasks);
+          if (tasksJson !== lastTasksJson) {
+            lastTasksJson = tasksJson;
+            this.broadcast('agent-tasks', {
+              agent: agentId,
+              tasks,
+            });
+          }
+        }
       } else if (event.type === 'error') {
         throw new Error(event.content);
       }

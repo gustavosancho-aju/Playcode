@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { usePipelineStore } from '../stores/usePipelineStore';
 import { useGameStore } from '../stores/useGameStore';
 import { useSocket } from '../hooks/useSocket';
@@ -118,11 +120,9 @@ export function ApprovalPopup() {
             </div>
           )}
           {pendingApproval.artifactContent ? (
-            <pre className="text-gray-300 font-mono text-xs leading-relaxed whitespace-pre-wrap bg-black/50 rounded p-4 border border-gray-800">
-              {pendingApproval.artifactContent.length > 2000
-                ? pendingApproval.artifactContent.slice(0, 2000) + '\n\n... (conteúdo truncado para preview)'
-                : pendingApproval.artifactContent}
-            </pre>
+            <div className="bg-black/50 rounded p-4 border border-gray-800 prose prose-invert prose-sm max-w-none prose-headings:text-matrix-green prose-a:text-cyan-400 prose-code:text-yellow-300 prose-pre:bg-black/50 prose-pre:border prose-pre:border-gray-800">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{pendingApproval.artifactContent}</ReactMarkdown>
+            </div>
           ) : (
             <p className="text-gray-500 font-mono text-sm italic">
               Artefato sendo processado...

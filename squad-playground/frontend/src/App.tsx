@@ -9,6 +9,7 @@ import { ToastSystem } from './components/ToastSystem';
 import { ReconnectBanner } from './components/ReconnectBanner';
 import { GameHUD } from './components/GameHUD';
 import { BottomBar } from './components/BottomBar';
+import { PipelineStarter } from './components/PipelineStarter';
 import { StepTracker } from './components/StepTracker';
 import { AgentChat } from './components/AgentChat';
 import { MicroTasks } from './components/MicroTasks';
@@ -168,24 +169,21 @@ export default function App() {
             </div>
             <p className="text-gray-500 font-mono text-sm">Matrix Pipeline v0.3.0</p>
 
+            <PipelineStarter />
+
             <div className="flex items-center gap-4 pointer-events-auto">
               <button
-                onClick={sendPing}
-                className="px-4 py-1.5 border border-matrix-green text-matrix-green font-mono text-xs rounded hover:bg-matrix-green hover:text-matrix-black transition-colors duration-200"
-              >
-                Send Ping
-              </button>
-              <button
                 onClick={runDemo}
-                className="px-4 py-1.5 border border-yellow-400 text-yellow-400 font-mono text-xs rounded hover:bg-yellow-400 hover:text-black transition-colors duration-200"
+                className="px-4 py-1.5 border border-yellow-400/50 text-yellow-400/50 font-mono text-[10px] rounded hover:bg-yellow-400 hover:text-black transition-colors duration-200"
               >
                 ▶ Demo
               </button>
-              {lastPong && (
-                <span className="text-matrix-neon font-mono text-xs">
-                  Pong at {new Date(lastPong).toISOString()}
-                </span>
-              )}
+              <button
+                onClick={sendPing}
+                className="px-4 py-1.5 border border-gray-700 text-gray-600 font-mono text-[10px] rounded hover:text-gray-300 transition-colors duration-200"
+              >
+                Ping
+              </button>
             </div>
 
             <div className="pointer-events-auto w-full max-w-sm px-4">

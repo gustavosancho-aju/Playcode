@@ -11,6 +11,58 @@ import type { AgentId, AgentStatus } from 'shared/types';
 
 const SOCKET_URL = 'http://localhost:3001';
 
+// Default tasks per agent — shown immediately when agent starts processing
+const DEFAULT_AGENT_TASKS: Partial<Record<AgentId, string[]>> = {
+  organizador: [
+    'Analisar briefing prévio',
+    'Processar notas da reunião',
+    'Cruzar dados',
+    'Priorizar dores/oportunidades',
+    'Estruturar briefing organizado',
+  ],
+  solucoes: [
+    'Analisar briefing organizado',
+    'Identificar oportunidades de solução',
+    'Desenvolver propostas de solução',
+    'Definir benefícios e diferenciais',
+    'Compilar cardápio de soluções',
+  ],
+  estruturas: [
+    'Analisar soluções propostas',
+    'Definir estrutura de cada produto/serviço',
+    'Criar cronograma e entregas',
+    'Definir metodologia',
+    'Compilar estrutura completa',
+  ],
+  financeiro: [
+    'Analisar estruturas propostas',
+    'Calcular custos e investimentos',
+    'Definir precificação',
+    'Projetar ROI e payback',
+    'Compilar análise financeira',
+  ],
+  closer: [
+    'Analisar material completo',
+    'Estruturar proposta comercial',
+    'Definir condições e prazos',
+    'Criar argumentos de fechamento',
+    'Compilar proposta final',
+  ],
+  apresentacao: [
+    'Analisar proposta comercial',
+    'Criar estrutura da apresentação',
+    'Desenvolver slides/seções',
+    'Adicionar elementos visuais',
+    'Compilar apresentação final',
+  ],
+  pesquisa: [
+    'Pesquisar mercado e segmento',
+    'Identificar concorrentes',
+    'Analisar tendências',
+    'Compilar briefing prévio',
+  ],
+};
+
 interface PipelineUpdateEvent {
   agent: string;
   status: string;
@@ -81,6 +133,28 @@ export function useSocket() {
         message: data.message,
         artifactPath: data.artifactPath,
       });
+
+      // Inject default tasks when agent starts processing
+      if (data.status === 'processing') {
+        const defaultTasks = DEFAULT_AGENT_TASKS[agentId];
+        if (defaultTasks) {
+          const tasks = defaultTasks.map((text, i) => ({
+            text,
+            status: (i === 0 ? 'in_progress' : 'pending') as 'pending' | 'in_progress' | 'completed',
+          }));
+          usePipelineStore.getState().updateTasks(agentId, tasks);
+        }
+      }
+
+      // Mark all tasks as completed when agent finishes
+      if (data.status === 'done') {
+        const existing = usePipelineStore.getState().allTasks[agentId];
+        if (existing && existing.length > 0) {
+          const completed = existing.map((t) => ({ ...t, status: 'completed' as const }));
+          usePipelineStore.getState().updateTasks(agentId, completed);
+        }
+      }
+
       if (data.message) {
         const def = AGENT_DEFINITIONS.find((a) => a.id === agentId);
         if (def) {
@@ -92,6 +166,32 @@ export function useSocket() {
             text: data.message,
           });
         }
+      }
+    });
+
+    // Track streaming progress to advance tasks
+    const chunkCounts: Record<string, number> = {};
+    socket.on('agent-stream', (data: { agent: string; chunk: string }) => {
+      const agentId = data.agent.toLowerCase() as AgentId;
+      chunkCounts[agentId] = (chunkCounts[agentId] || 0) + data.chunk.length;
+
+      const tasks = usePipelineStore.getState().allTasks[agentId];
+      if (!tasks || tasks.length === 0) return;
+
+      // Estimate progress: advance one task per ~20% of expected output (~2000 chars per task)
+      const charsPerTask = 2000;
+      const completedCount = Math.min(
+        Math.floor(chunkCounts[agentId] / charsPerTask),
+        tasks.length - 1, // Keep last task as in_progress until 'done'
+      );
+
+      const currentCompleted = tasks.filter((t) => t.status === 'completed').length;
+      if (completedCount > currentCompleted) {
+        const updated = tasks.map((t, i) => ({
+          ...t,
+          status: (i < completedCount ? 'completed' : i === completedCount ? 'in_progress' : 'pending') as 'pending' | 'in_progress' | 'completed',
+        }));
+        usePipelineStore.getState().updateTasks(agentId, updated);
       }
     });
 

@@ -101,6 +101,12 @@ export function VictoryScreen() {
     }
   }, [sessionId]);
 
+  const handleDownloadPdf = useCallback(() => {
+    if (sessionId) {
+      window.open(`${API_BASE}/api/artifacts/${sessionId}/pdf`, '_blank');
+    }
+  }, [sessionId]);
+
   const handleNewMission = useCallback(() => {
     setVisible(false);
     setShowParticles(false);
@@ -195,10 +201,16 @@ export function VictoryScreen() {
         {/* Action buttons */}
         <div className="flex flex-col gap-2 w-full">
           <button
-            onClick={handleDownload}
-            className="w-full px-4 py-2.5 bg-matrix-green/20 border border-matrix-green text-matrix-green font-mono text-sm rounded hover:bg-matrix-green hover:text-matrix-black transition-colors"
+            onClick={handleDownloadPdf}
+            className="w-full px-4 py-3 bg-matrix-green/20 border-2 border-matrix-green text-matrix-green font-mono text-sm rounded hover:bg-matrix-green hover:text-matrix-black transition-colors font-bold"
           >
-            📥 Download Todos os Artefatos
+            📄 Baixar Relatório em PDF
+          </button>
+          <button
+            onClick={handleDownload}
+            className="w-full px-4 py-2 bg-black/40 border border-gray-600 text-gray-300 font-mono text-xs rounded hover:border-matrix-green hover:text-matrix-green transition-colors"
+          >
+            📥 Download Artefatos (ZIP)
           </button>
           <div className="flex gap-2">
             <button

@@ -790,7 +790,7 @@ export class PipelineScene extends Phaser.Scene {
     // Flash the house
     const house = this.houses[index];
     if (house) {
-      const rect = house.getAt(0) as Phaser.GameObjects.Rectangle;
+      const rect = house.getAt(1) as Phaser.GameObjects.Rectangle;
       this.tweens.add({
         targets: rect,
         alpha: { from: 0.5, to: 1 },
@@ -1048,7 +1048,7 @@ export class PipelineScene extends Phaser.Scene {
         agents.forEach((agent, i) => {
           if (!this.houses[i]) return;
 
-          const rect = this.houses[i].getAt(0) as Phaser.GameObjects.Rectangle;
+          const rect = this.houses[i].getAt(1) as Phaser.GameObjects.Rectangle;
           const color = Phaser.Display.Color.HexStringToColor(agent.color).color;
 
           // LED indicator (second to last child before label elements)

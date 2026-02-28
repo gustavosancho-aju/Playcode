@@ -462,7 +462,7 @@ export class PipelineScene extends Phaser.Scene {
 
       // Name label inside the room, at the bottom
       const label = this.add.text(0, ROOM_SIZE / 2 - 16, agent.name, {
-        fontFamily: '"Press Start 2P", monospace',
+        fontFamily: '"Geist", system-ui, sans-serif',
         fontSize: '8px',
         color: agent.color,
         align: 'center',

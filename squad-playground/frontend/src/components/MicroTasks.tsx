@@ -13,20 +13,19 @@ export function MicroTasks() {
   const def = AGENT_DEFINITIONS.find((a) => a.id === currentAgent);
 
   return (
-    <div className="fixed right-[260px] bottom-[60px] w-[280px] bg-black/80 backdrop-blur-sm border border-matrix-green/30 rounded-lg z-20 pointer-events-auto overflow-hidden">
+    <div className="fixed right-[260px] bottom-[60px] w-[280px] glass rounded-xl z-20 pointer-events-auto overflow-hidden shadow-glass">
       {/* Header */}
       <div
-        className="flex items-center gap-2 px-3 py-2 border-b border-matrix-green/20"
-        style={{ borderBottomColor: def?.color ? `${def.color}40` : undefined }}
+        className="flex items-center gap-2 px-3 py-2.5 border-b border-white/[0.06]"
       >
         <span className="text-sm">{def?.icon}</span>
         <span
-          className="font-mono text-xs font-bold tracking-wider"
+          className="font-display text-xs font-bold tracking-wider"
           style={{ color: def?.color }}
         >
           {def?.name?.toUpperCase()}
         </span>
-        <span className="text-gray-500 font-mono text-[10px] ml-auto">
+        <span className="text-gray-500 font-display text-[10px] ml-auto tabular-nums">
           {currentTasks.filter((t) => t.status === 'completed').length}/{currentTasks.length}
         </span>
       </div>
@@ -48,8 +47,8 @@ export function MicroTasks() {
           return (
             <div
               key={i}
-              className={`flex items-start gap-2 px-2 py-1 rounded ${
-                task.status === 'in_progress' ? 'bg-yellow-400/5' : ''
+              className={`flex items-start gap-2 px-2.5 py-1.5 rounded-lg ${
+                task.status === 'in_progress' ? 'bg-yellow-400/[0.04]' : ''
               }`}
             >
               <span
@@ -68,9 +67,9 @@ export function MicroTasks() {
       </div>
 
       {/* Progress bar */}
-      <div className="h-1 bg-gray-800">
+      <div className="h-1 bg-white/[0.04]">
         <div
-          className="h-full transition-all duration-500 ease-out"
+          className="h-full transition-all duration-500 ease-out rounded-full"
           style={{
             width: `${(currentTasks.filter((t) => t.status === 'completed').length / currentTasks.length) * 100}%`,
             backgroundColor: def?.color || '#22c55e',

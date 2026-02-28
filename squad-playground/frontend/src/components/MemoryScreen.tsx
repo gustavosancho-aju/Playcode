@@ -59,7 +59,6 @@ function highlightText(text: string, query: string): JSX.Element {
 
 // Simple markdown to HTML for preview
 function renderMarkdown(md: string): string {
-  // Strip frontmatter
   let text = md;
   if (text.startsWith('---')) {
     const end = text.indexOf('---', 3);
@@ -104,30 +103,19 @@ export function MemoryScreen() {
   const [filterType, setFilterType] = useState<'all' | 'md' | 'html'>('all');
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
-  // Fetch all documents
   useEffect(() => {
     fetch('/api/memory/documents')
       .then((r) => r.json())
-      .then((data) => {
-        setDocuments(data);
-        setLoading(false);
-      })
+      .then((data) => { setDocuments(data); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
 
-  // Debounced search
   const doSearch = useCallback((q: string) => {
-    if (!q.trim()) {
-      setSearchResults(null);
-      return;
-    }
+    if (!q.trim()) { setSearchResults(null); return; }
     setSearching(true);
     fetch(`/api/memory/search?q=${encodeURIComponent(q)}`)
       .then((r) => r.json())
-      .then((data) => {
-        setSearchResults(data.results);
-        setSearching(false);
-      })
+      .then((data) => { setSearchResults(data.results); setSearching(false); })
       .catch(() => setSearching(false));
   }, []);
 
@@ -137,7 +125,6 @@ export function MemoryScreen() {
     debounceRef.current = setTimeout(() => doSearch(value), 300);
   };
 
-  // Open document preview
   const openDocument = (sessionId: string, filename: string, type: string) => {
     setSelectedDoc({ sessionId, filename, type });
     fetch(`/api/memory/document/${sessionId}/${filename}`)
@@ -146,25 +133,24 @@ export function MemoryScreen() {
       .catch(() => setDocContent('Erro ao carregar documento'));
   };
 
-  // Filter documents
   const displayDocs = (searchResults || documents).filter((doc) => {
     if (filterAgent && doc.agent !== filterAgent) return false;
     if (filterType !== 'all' && doc.type !== filterType) return false;
     return true;
   });
 
-  // Get unique agents from documents
   const uniqueAgents = [...new Set(documents.map((d) => d.agent))];
 
   return (
-    <div className="h-full flex flex-col bg-black/40 overflow-hidden">
+    <div className="h-full flex flex-col overflow-hidden">
       {/* Header with search */}
-      <div className="flex-none p-4 border-b border-gray-800 space-y-3">
+      <div className="flex-none p-5 border-b border-white/[0.06] space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-green-400 font-mono text-lg font-bold flex items-center gap-2">
-            <span className="text-xl">🧠</span> Memoria
+          <h2 className="font-display text-lg font-bold text-white flex items-center gap-2.5">
+            <span className="text-xl">🧠</span>
+            <span className="text-gradient">Memoria</span>
           </h2>
-          <span className="text-gray-500 font-mono text-xs">
+          <span className="text-gray-500 font-display text-xs">
             {searchResults ? `${displayDocs.length} resultados` : `${displayDocs.length} documentos`}
           </span>
         </div>
@@ -176,9 +162,9 @@ export function MemoryScreen() {
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
             placeholder="Buscar nos documentos..."
-            className="w-full bg-gray-900/80 border border-gray-700 rounded-lg px-4 py-2 pl-10 text-gray-200 font-mono text-sm placeholder-gray-600 focus:outline-none focus:border-green-500/50 transition-colors"
+            className="w-full glass rounded-xl px-4 py-2.5 pl-10 text-gray-200 font-display text-sm placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-white/10 transition-all"
           />
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600">
+          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-600 text-sm">
             {searching ? '...' : '🔍'}
           </span>
           {searchQuery && (
@@ -193,11 +179,10 @@ export function MemoryScreen() {
 
         {/* Filters */}
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Agent filter chips */}
           <button
             onClick={() => setFilterAgent(null)}
-            className={`px-2.5 py-1 rounded-full text-xs font-mono transition-colors ${
-              !filterAgent ? 'bg-green-500/20 text-green-400 border border-green-500/40' : 'bg-gray-800 text-gray-500 border border-gray-700 hover:text-gray-300'
+            className={`px-3 py-1.5 rounded-xl font-display text-xs transition-all ${
+              !filterAgent ? 'bg-white/[0.07] text-white shadow-glow' : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'
             }`}
           >
             Todos
@@ -208,28 +193,27 @@ export function MemoryScreen() {
               <button
                 key={agentId}
                 onClick={() => setFilterAgent(filterAgent === agentId ? null : agentId)}
-                className={`px-2.5 py-1 rounded-full text-xs font-mono transition-colors flex items-center gap-1 ${
+                className={`px-3 py-1.5 rounded-xl font-display text-xs transition-all flex items-center gap-1.5 ${
                   filterAgent === agentId
-                    ? 'border text-white'
-                    : 'bg-gray-800 text-gray-500 border border-gray-700 hover:text-gray-300'
+                    ? 'text-white'
+                    : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'
                 }`}
-                style={filterAgent === agentId ? { borderColor: info.color, backgroundColor: `${info.color}20` } : undefined}
+                style={filterAgent === agentId ? { backgroundColor: `${info.color}15`, boxShadow: `0 0 12px ${info.color}20` } : undefined}
               >
-                <span>{info.icon}</span>
+                <span className="text-sm">{info.icon}</span>
                 <span>{info.name}</span>
               </button>
             );
           })}
 
-          <div className="w-px h-5 bg-gray-700 mx-1" />
+          <div className="w-px h-5 bg-white/[0.06] mx-1" />
 
-          {/* Type filter */}
           {(['all', 'md', 'html'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setFilterType(t)}
-              className={`px-2.5 py-1 rounded-full text-xs font-mono transition-colors ${
-                filterType === t ? 'bg-blue-500/20 text-blue-400 border border-blue-500/40' : 'bg-gray-800 text-gray-500 border border-gray-700 hover:text-gray-300'
+              className={`px-3 py-1.5 rounded-xl font-display text-xs transition-all ${
+                filterType === t ? 'bg-white/[0.07] text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'
               }`}
             >
               {t === 'all' ? 'Todos' : t.toUpperCase()}
@@ -239,11 +223,11 @@ export function MemoryScreen() {
       </div>
 
       {/* Document list */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2">
+      <div className="flex-1 overflow-y-auto p-5 space-y-2">
         {loading ? (
-          <div className="text-center text-gray-500 font-mono text-sm py-20">Carregando documentos...</div>
+          <div className="text-center text-gray-500 font-display text-sm py-20">Carregando documentos...</div>
         ) : displayDocs.length === 0 ? (
-          <div className="text-center text-gray-600 font-mono text-sm py-20">
+          <div className="text-center text-gray-600 font-display text-sm py-20">
             {searchQuery ? 'Nenhum resultado encontrado' : 'Nenhum documento disponivel'}
           </div>
         ) : (
@@ -254,41 +238,37 @@ export function MemoryScreen() {
               <button
                 key={`${doc.sessionId}-${doc.filename}`}
                 onClick={() => openDocument(doc.sessionId, doc.filename, doc.type)}
-                className="w-full text-left bg-gray-900/60 border border-gray-800 rounded-lg p-3 hover:border-green-500/30 hover:bg-gray-900/80 transition-all group"
+                className="w-full text-left glass rounded-xl p-4 hover:bg-white/[0.04] transition-all group"
               >
                 <div className="flex items-start gap-3">
-                  {/* Agent icon */}
                   <div
-                    className="w-9 h-9 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
-                    style={{ backgroundColor: `${info.color}20`, border: `1px solid ${info.color}40` }}
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+                    style={{ backgroundColor: `${info.color}15`, border: `1px solid ${info.color}25` }}
                   >
                     {info.icon}
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    {/* Title */}
                     <div className="flex items-center gap-2">
-                      <span className="text-gray-200 font-mono text-sm font-medium truncate group-hover:text-green-400 transition-colors">
+                      <span className="text-gray-200 font-display text-sm font-medium truncate group-hover:text-white transition-colors">
                         {doc.title}
                       </span>
-                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono uppercase ${
-                        doc.type === 'html' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'
+                      <span className={`px-1.5 py-0.5 rounded-lg text-[10px] font-display uppercase ${
+                        doc.type === 'html' ? 'bg-purple-500/15 text-purple-400' : 'bg-cyan-500/15 text-cyan-400'
                       }`}>
                         {doc.type}
                       </span>
                     </div>
 
-                    {/* Metadata */}
-                    <div className="flex items-center gap-3 mt-1 text-gray-600 font-mono text-[11px]">
+                    <div className="flex items-center gap-3 mt-1.5 text-gray-600 font-display text-[11px]">
                       <span style={{ color: info.color }}>{info.name}</span>
                       <span>{doc.sessionId}</span>
                       <span>{formatDate(doc.createdAt)}</span>
                       <span>{formatSize(doc.size)}</span>
                     </div>
 
-                    {/* Search snippet */}
                     {isSearchResult && (
-                      <div className="mt-2 text-gray-400 text-xs font-mono bg-gray-800/50 rounded px-2 py-1.5 leading-relaxed">
+                      <div className="mt-2 text-gray-400 text-xs font-mono glass rounded-lg px-3 py-2 leading-relaxed">
                         {highlightText((doc as SearchResult).snippet, searchQuery)}
                         <span className="text-yellow-500/60 ml-2">({(doc as SearchResult).matchCount} matches)</span>
                       </div>
@@ -303,41 +283,39 @@ export function MemoryScreen() {
 
       {/* Document Preview Modal */}
       {selectedDoc && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setSelectedDoc(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm" onClick={() => setSelectedDoc(null)}>
           <div
-            className="bg-gray-900 border border-gray-700 rounded-xl w-[90vw] max-w-4xl h-[85vh] flex flex-col shadow-2xl"
+            className="glass rounded-2xl w-[90vw] max-w-4xl h-[85vh] flex flex-col shadow-glass"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-800">
+            <div className="flex items-center justify-between p-5 border-b border-white/[0.06]">
               <div className="flex items-center gap-3">
                 <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-base"
+                  className="w-9 h-9 rounded-xl flex items-center justify-center text-base"
                   style={{
-                    backgroundColor: `${getAgentInfo(documents.find((d) => d.sessionId === selectedDoc.sessionId && d.filename === selectedDoc.filename)?.agent || '').color}20`,
+                    backgroundColor: `${getAgentInfo(documents.find((d) => d.sessionId === selectedDoc.sessionId && d.filename === selectedDoc.filename)?.agent || '').color}15`,
                   }}
                 >
                   {getAgentInfo(documents.find((d) => d.sessionId === selectedDoc.sessionId && d.filename === selectedDoc.filename)?.agent || '').icon}
                 </div>
                 <div>
-                  <div className="text-gray-200 font-mono text-sm font-medium">{selectedDoc.filename}</div>
-                  <div className="text-gray-500 font-mono text-[11px]">{selectedDoc.sessionId}</div>
+                  <div className="text-gray-200 font-display text-sm font-medium">{selectedDoc.filename}</div>
+                  <div className="text-gray-500 font-display text-[11px]">{selectedDoc.sessionId}</div>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedDoc(null)}
-                className="text-gray-500 hover:text-gray-300 text-lg px-2"
+                className="text-gray-500 hover:text-gray-300 text-lg px-2 transition-colors"
               >
                 ✕
               </button>
             </div>
 
-            {/* Modal content */}
             <div className="flex-1 overflow-y-auto p-6">
               {selectedDoc.type === 'html' ? (
                 <iframe
                   srcDoc={docContent}
-                  className="w-full h-full border-0 rounded bg-white"
+                  className="w-full h-full border-0 rounded-xl bg-white"
                   sandbox="allow-same-origin"
                   title="Document preview"
                 />

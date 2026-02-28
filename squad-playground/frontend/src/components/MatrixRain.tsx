@@ -1,80 +1,77 @@
-import { useEffect, useRef } from 'react';
 import { useSettingsStore } from '../stores/useSettingsStore';
 
-const CHARS = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-const FONT_SIZE = 14;
-const COLOR = '#22C55E';
-
 export function MatrixRain() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const codeRain = useSettingsStore((s) => s.effects.codeRain);
-
-  useEffect(() => {
-    if (!codeRain) return;
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let animId: number;
-    let columns: number;
-    let drops: number[];
-
-    const MAX_COLUMNS = 40;
-
-    function resize() {
-      canvas!.width = window.innerWidth;
-      canvas!.height = window.innerHeight;
-      const rawCols = Math.floor(canvas!.width / FONT_SIZE);
-      columns = Math.min(rawCols, MAX_COLUMNS);
-      drops = Array.from({ length: columns }, () => Math.random() * -100);
-    }
-
-    resize();
-    window.addEventListener('resize', resize);
-
-    function draw() {
-      ctx!.fillStyle = 'rgba(13, 13, 13, 0.05)';
-      ctx!.fillRect(0, 0, canvas!.width, canvas!.height);
-
-      ctx!.fillStyle = COLOR;
-      ctx!.font = `${FONT_SIZE}px "JetBrains Mono", monospace`;
-
-      for (let i = 0; i < columns; i++) {
-        const char = CHARS[Math.floor(Math.random() * CHARS.length)];
-        const x = i * FONT_SIZE;
-        const y = drops[i] * FONT_SIZE;
-
-        ctx!.globalAlpha = 0.4 + Math.random() * 0.4;
-        ctx!.fillText(char, x, y);
-
-        if (y > canvas!.height && Math.random() > 0.975) {
-          drops[i] = 0;
-        }
-        drops[i] += 0.5 + Math.random() * 0.5;
-      }
-
-      ctx!.globalAlpha = 1;
-      animId = requestAnimationFrame(draw);
-    }
-
-    animId = requestAnimationFrame(draw);
-
-    return () => {
-      cancelAnimationFrame(animId);
-      window.removeEventListener('resize', resize);
-    };
-  }, [codeRain]);
 
   if (!codeRain) return null;
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="fixed inset-0 pointer-events-none"
-      style={{ zIndex: 0 }}
-    />
+    <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
+      {/* Base gradient — subtle ambient glow */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: 'radial-gradient(ellipse at 20% 50%, rgba(0, 255, 65, 0.04) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(168, 85, 247, 0.04) 0%, transparent 50%), radial-gradient(ellipse at 50% 80%, rgba(6, 182, 212, 0.03) 0%, transparent 50%)',
+        }}
+      />
+
+      {/* Floating orb 1 — green */}
+      <div
+        className="absolute w-[500px] h-[500px] rounded-full animate-orb-float"
+        style={{
+          top: '10%',
+          left: '15%',
+          background: 'radial-gradient(circle, rgba(0, 255, 65, 0.06) 0%, transparent 70%)',
+          filter: 'blur(80px)',
+        }}
+      />
+
+      {/* Floating orb 2 — purple */}
+      <div
+        className="absolute w-[400px] h-[400px] rounded-full animate-orb-float-delay"
+        style={{
+          top: '50%',
+          right: '10%',
+          background: 'radial-gradient(circle, rgba(168, 85, 247, 0.06) 0%, transparent 70%)',
+          filter: 'blur(80px)',
+        }}
+      />
+
+      {/* Floating orb 3 — cyan */}
+      <div
+        className="absolute w-[350px] h-[350px] rounded-full animate-orb-float"
+        style={{
+          bottom: '10%',
+          left: '40%',
+          background: 'radial-gradient(circle, rgba(6, 182, 212, 0.04) 0%, transparent 70%)',
+          filter: 'blur(80px)',
+          animationDelay: '-7s',
+        }}
+      />
+
+      {/* Matrix Grid with 3D Perspective — bottom section */}
+      <div
+        className="absolute left-0 right-0 bottom-0 h-[60vh] animate-grid-pulse"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(0, 255, 65, 0.08) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 255, 65, 0.08) 1px, transparent 1px)
+          `,
+          backgroundSize: '60px 60px',
+          transform: 'perspective(1000px) rotateX(60deg)',
+          transformOrigin: 'bottom center',
+          maskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.3) 30%, rgba(0,0,0,0.8) 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.3) 30%, rgba(0,0,0,0.8) 100%)',
+        }}
+      />
+
+      {/* Strong vignette */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: 'radial-gradient(ellipse at center, transparent 30%, rgba(10, 10, 10, 0.7) 100%)',
+        }}
+      />
+    </div>
   );
 }

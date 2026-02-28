@@ -64,7 +64,7 @@ export function ProjectHistory() {
 
   const pipelineBadge = (type: string) => {
     if (type === 'consultoria') return { label: 'Consultoria', color: '#22c55e' };
-    if (type === 'briefing') return { label: 'Briefing', color: '#3b82f6' };
+    if (type === 'briefing') return { label: 'Briefing', color: '#06b6d4' };
     return { label: type, color: '#6b7280' };
   };
 
@@ -92,10 +92,10 @@ export function ProjectHistory() {
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
-          <h1 className="font-mono text-2xl font-bold text-matrix-green tracking-wider">
+          <h1 className="font-display text-2xl font-bold text-gradient tracking-wide">
             PROJETOS
           </h1>
-          <p className="text-gray-500 font-mono text-sm">
+          <p className="text-gray-500 font-display text-sm">
             {sessions.length} sessão(ões) encontrada(s)
           </p>
         </div>
@@ -107,7 +107,7 @@ export function ProjectHistory() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar por sessão, tipo ou artefato..."
-            className="w-full bg-black/50 border border-gray-700 rounded-lg px-4 py-2.5 font-mono text-sm text-gray-300 placeholder-gray-600 focus:border-matrix-green/50 focus:outline-none transition-colors"
+            className="w-full glass rounded-xl px-4 py-2.5 font-display text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-white/10 transition-all"
           />
           {searchQuery && (
             <button
@@ -119,25 +119,23 @@ export function ProjectHistory() {
           )}
         </div>
 
-        {/* Loading / Error */}
         {loading && (
           <div className="text-center py-12">
-            <p className="text-gray-500 font-mono text-sm animate-pulse">Carregando sessões...</p>
+            <p className="text-gray-500 font-display text-sm animate-pulse">Carregando sessões...</p>
           </div>
         )}
         {error && (
           <div className="text-center py-12">
-            <p className="text-red-400 font-mono text-sm">{error}</p>
-            <button onClick={fetchSessions} className="mt-2 text-matrix-green font-mono text-xs underline">
+            <p className="text-red-400 font-display text-sm">{error}</p>
+            <button onClick={fetchSessions} className="mt-2 text-green-400 font-display text-xs underline">
               Tentar novamente
             </button>
           </div>
         )}
 
-        {/* Session list */}
         {!loading && !error && filtered.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-500 font-mono text-sm">
+            <p className="text-gray-500 font-display text-sm">
               {searchQuery ? 'Nenhuma sessão encontrada para esta busca' : 'Nenhuma sessão encontrada. Execute um pipeline primeiro!'}
             </p>
           </div>
@@ -152,10 +150,8 @@ export function ProjectHistory() {
             return (
               <div
                 key={session.sessionId}
-                className="border border-gray-800 rounded-lg overflow-hidden transition-colors hover:border-gray-700"
-                style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
+                className="glass rounded-xl overflow-hidden transition-all hover:bg-white/[0.04]"
               >
-                {/* Session header */}
                 <button
                   onClick={() => setExpandedSession(isExpanded ? null : session.sessionId)}
                   className="w-full flex items-center gap-4 px-4 py-3 text-left"
@@ -164,26 +160,25 @@ export function ProjectHistory() {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-sm text-gray-200">{session.sessionId}</span>
+                      <span className="font-display text-sm text-gray-200">{session.sessionId}</span>
                       <span
-                        className="px-2 py-0.5 rounded-full font-mono text-[10px]"
-                        style={{ color: badge.color, borderColor: badge.color, border: '1px solid' }}
+                        className="px-2 py-0.5 rounded-lg font-display text-[10px]"
+                        style={{ color: badge.color, border: `1px solid ${badge.color}40`, backgroundColor: `${badge.color}10` }}
                       >
                         {badge.label}
                       </span>
                       <span
-                        className="px-2 py-0.5 rounded-full font-mono text-[10px]"
-                        style={{ color: sBadge.color, borderColor: sBadge.color, border: '1px solid' }}
+                        className="px-2 py-0.5 rounded-lg font-display text-[10px]"
+                        style={{ color: sBadge.color, border: `1px solid ${sBadge.color}40`, backgroundColor: `${sBadge.color}10` }}
                       >
                         {sBadge.label}
                       </span>
                     </div>
-                    <p className="text-gray-500 font-mono text-[10px] mt-0.5">
+                    <p className="text-gray-500 font-display text-[10px] mt-0.5">
                       {formatDate(session.createdAt)} · {session.artifactCount} artefato(s)
                     </p>
                   </div>
 
-                  {/* Artifact agent icons */}
                   <div className="flex -space-x-1">
                     {session.artifacts.slice(0, 6).map((a, i) => {
                       const def = getAgentDef(a.agent);
@@ -196,9 +191,8 @@ export function ProjectHistory() {
                   </div>
                 </button>
 
-                {/* Expanded artifacts */}
                 {isExpanded && (
-                  <div className="border-t border-gray-800 px-4 py-3 space-y-2">
+                  <div className="border-t border-white/[0.06] px-4 py-3 space-y-2">
                     {session.artifacts.map((artifact) => {
                       const def = getAgentDef(artifact.agent);
                       const isHtml = artifact.filename.endsWith('.html');
@@ -206,18 +200,18 @@ export function ProjectHistory() {
                       return (
                         <div
                           key={artifact.filename}
-                          className="flex items-center gap-3 px-3 py-2 rounded-lg bg-black/30 hover:bg-white/5 transition-colors"
+                          className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white/[0.02] hover:bg-white/[0.04] transition-all"
                         >
                           <span className="text-sm">{def?.icon || '📄'}</span>
                           <div className="flex-1 min-w-0">
                             <span className="font-mono text-xs text-gray-300">{artifact.filename}</span>
-                            <span className="text-gray-600 font-mono text-[10px] ml-2">
+                            <span className="text-gray-600 font-display text-[10px] ml-2">
                               ({def?.name || artifact.agent})
                             </span>
                           </div>
                           <button
                             onClick={() => openPreview(session.sessionId, artifact.filename)}
-                            className="px-2 py-1 text-[10px] font-mono border border-gray-700 text-gray-400 rounded hover:border-matrix-green hover:text-matrix-green transition-colors"
+                            className="px-2.5 py-1 text-[10px] font-display rounded-lg glass text-gray-400 hover:text-white transition-all"
                           >
                             Preview
                           </button>
@@ -226,7 +220,7 @@ export function ProjectHistory() {
                               href={`${API}/api/artifacts/${session.sessionId}/landing-page`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="px-2 py-1 text-[10px] font-mono border border-gray-700 text-gray-400 rounded hover:border-blue-400 hover:text-blue-400 transition-colors"
+                              className="px-2.5 py-1 text-[10px] font-display rounded-lg glass text-gray-400 hover:text-cyan-400 transition-all"
                             >
                               Abrir ↗
                             </a>
@@ -235,11 +229,10 @@ export function ProjectHistory() {
                       );
                     })}
 
-                    {/* Download button */}
                     <div className="pt-2 flex gap-2">
                       <a
                         href={`${API}/api/artifacts/${session.sessionId}/download`}
-                        className="px-3 py-1.5 text-xs font-mono border border-gray-700 text-gray-400 rounded hover:border-matrix-green hover:text-matrix-green transition-colors"
+                        className="px-3 py-1.5 text-xs font-display rounded-xl glass text-gray-400 hover:text-white transition-all"
                       >
                         ⬇ Download ZIP
                       </a>
@@ -255,30 +248,28 @@ export function ProjectHistory() {
       {/* Preview Modal */}
       {previewContent && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm"
           onClick={() => setPreviewContent(null)}
         >
           <div
-            className="w-[800px] max-h-[80vh] bg-black/95 border border-matrix-green/30 rounded-xl overflow-hidden flex flex-col"
+            className="w-[800px] max-h-[80vh] glass rounded-2xl overflow-hidden flex flex-col shadow-glass"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
-              <span className="font-mono text-sm text-matrix-green">{previewContent.filename}</span>
+            <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.06]">
+              <span className="font-display text-sm text-green-400">{previewContent.filename}</span>
               <button
                 onClick={() => setPreviewContent(null)}
-                className="text-gray-500 hover:text-gray-300 text-sm"
+                className="text-gray-500 hover:text-gray-300 text-sm transition-colors"
               >
                 ✕
               </button>
             </div>
 
-            {/* Content */}
             <div className="flex-1 overflow-y-auto p-4">
               {previewContent.isHtml ? (
                 <iframe
                   srcDoc={previewContent.content}
-                  className="w-full h-[60vh] bg-white rounded"
+                  className="w-full h-[60vh] bg-white rounded-xl"
                   sandbox="allow-same-origin"
                   title="Preview"
                 />

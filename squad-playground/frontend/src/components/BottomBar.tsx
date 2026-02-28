@@ -19,12 +19,12 @@ export function BottomBar() {
 
   return (
     <>
-      <div className="fixed bottom-0 left-0 right-0 h-12 bg-matrix-black-soft/95 border-t border-matrix-green/20 flex items-center justify-between px-4 z-20">
+      <div className="fixed bottom-0 left-0 right-0 h-12 glass-heavy flex items-center justify-between px-4 z-20">
         <div className="flex items-center gap-2">
-          <button className="px-3 py-1 text-xs font-mono text-gray-400 border border-gray-700 rounded hover:border-matrix-green hover:text-matrix-green transition-colors">
+          <button className="px-3 py-1.5 text-xs font-display font-medium text-gray-500 rounded-lg border border-white/[0.06] hover:border-white/[0.12] hover:text-gray-300 hover:bg-white/[0.03] transition-all duration-200">
             Pause
           </button>
-          <button className="px-3 py-1 text-xs font-mono text-gray-400 border border-gray-700 rounded hover:border-matrix-green hover:text-matrix-green transition-colors">
+          <button className="px-3 py-1.5 text-xs font-display font-medium text-gray-500 rounded-lg border border-white/[0.06] hover:border-white/[0.12] hover:text-gray-300 hover:bg-white/[0.03] transition-all duration-200">
             Download
           </button>
         </div>
@@ -34,15 +34,15 @@ export function BottomBar() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setSettingsOpen(true)}
-            className="px-3 py-1 text-xs font-mono text-gray-400 border border-gray-700 rounded hover:border-matrix-green hover:text-matrix-green transition-colors"
+            className="px-3 py-1.5 text-xs font-display font-medium text-gray-500 rounded-lg border border-white/[0.06] hover:border-white/[0.12] hover:text-gray-300 hover:bg-white/[0.03] transition-all duration-200"
           >
-            ⚙ Settings
+            Settings
           </button>
           <button
             onClick={() => setHelpOpen(true)}
-            className="px-3 py-1 text-xs font-mono text-gray-400 border border-gray-700 rounded hover:border-matrix-green hover:text-matrix-green transition-colors"
+            className="px-3 py-1.5 text-xs font-display font-medium text-gray-500 rounded-lg border border-white/[0.06] hover:border-white/[0.12] hover:text-gray-300 hover:bg-white/[0.03] transition-all duration-200"
           >
-            ? Help
+            Help
           </button>
         </div>
       </div>

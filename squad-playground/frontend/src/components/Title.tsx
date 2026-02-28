@@ -1,12 +1,12 @@
 export function Title() {
   return (
-    <h1
-      className="font-pixel text-matrix-green text-sm tracking-wider"
-      style={{
-        textShadow: '0 0 10px rgba(34, 197, 94, 0.6), 0 0 20px rgba(34, 197, 94, 0.3)',
-      }}
-    >
-      SQUAD PLAYGROUND
-    </h1>
+    <div className="flex flex-col items-center gap-2">
+      <h1 className="font-display text-3xl font-bold tracking-tight text-gradient">
+        SQUAD PLAYGROUND
+      </h1>
+      <p className="font-ui text-xs text-gray-500 tracking-[0.3em] uppercase">
+        AI-Powered Pipeline
+      </p>
+    </div>
   );
 }

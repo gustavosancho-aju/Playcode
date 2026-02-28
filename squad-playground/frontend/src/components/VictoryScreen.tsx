@@ -35,7 +35,7 @@ function generateParticles(): Particle[] {
       ty: Math.sin(angle) * dist,
       size: 2 + Math.random() * 6,
       delay: Math.random() * 300,
-      color: `hsl(${140 + Math.random() * 30}, 80%, ${50 + Math.random() * 20}%)`,
+      color: `hsl(${140 + Math.random() * 80}, 70%, ${50 + Math.random() * 20}%)`,
     };
   });
 }
@@ -53,16 +53,13 @@ export function VictoryScreen() {
   const [showParticles, setShowParticles] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
 
-  // Show when pipeline completes
   useEffect(() => {
     if (status === 'completed') {
       setVisible(true);
-      // Trigger particles after a short delay
       setTimeout(() => setShowParticles(true), 200);
     }
   }, [status]);
 
-  // Fetch word count
   useEffect(() => {
     if (!visible || !sessionId) return;
     const controller = new AbortController();
@@ -76,7 +73,6 @@ export function VictoryScreen() {
     return () => controller.abort();
   }, [visible, sessionId]);
 
-  // Escape to dismiss
   useEffect(() => {
     if (!visible) return;
     const handleKey = (e: KeyboardEvent) => {
@@ -87,27 +83,19 @@ export function VictoryScreen() {
   }, [visible]);
 
   const handleDownload = useCallback(() => {
-    if (sessionId) {
-      window.open(`${API_BASE}/api/artifacts/${sessionId}/download`, '_blank');
-    }
+    if (sessionId) window.open(`${API_BASE}/api/artifacts/${sessionId}/download`, '_blank');
   }, [sessionId]);
 
   const handleViewProposal = useCallback(() => {
-    if (sessionId) {
-      window.open(`${API_BASE}/api/artifacts/${sessionId}/proposta/preview`, '_blank');
-    }
+    if (sessionId) window.open(`${API_BASE}/api/artifacts/${sessionId}/proposta/preview`, '_blank');
   }, [sessionId]);
 
   const handleViewLanding = useCallback(() => {
-    if (sessionId) {
-      window.open(`${API_BASE}/api/artifacts/${sessionId}/landing-page`, '_blank');
-    }
+    if (sessionId) window.open(`${API_BASE}/api/artifacts/${sessionId}/landing-page`, '_blank');
   }, [sessionId]);
 
   const handleDownloadPdf = useCallback(() => {
-    if (sessionId) {
-      window.open(`${API_BASE}/api/artifacts/${sessionId}/pdf`, '_blank');
-    }
+    if (sessionId) window.open(`${API_BASE}/api/artifacts/${sessionId}/pdf`, '_blank');
   }, [sessionId]);
 
   const handleNewMission = useCallback(() => {
@@ -125,8 +113,8 @@ export function VictoryScreen() {
       className="fixed inset-0 z-50 flex items-center justify-center"
       onClick={(e) => { if (e.target === overlayRef.current) setVisible(false); }}
     >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/90" />
+      {/* Backdrop with blur */}
+      <div className="absolute inset-0 bg-black/85 backdrop-blur-sm" />
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center gap-6 max-w-lg w-full mx-4">
@@ -153,11 +141,11 @@ export function VictoryScreen() {
           </div>
         )}
 
-        {/* Neo scaled 3x */}
+        {/* Icon */}
         <div className="relative">
           <div
-            className="w-24 h-24 bg-matrix-green/20 border-2 border-matrix-green rounded-lg flex items-center justify-center animate-pulse"
-            style={{ boxShadow: '0 0 40px rgba(34, 197, 94, 0.5)' }}
+            className="w-24 h-24 rounded-2xl glass flex items-center justify-center"
+            style={{ boxShadow: '0 0 40px rgba(34, 197, 94, 0.3), 0 0 80px rgba(168, 85, 247, 0.15)' }}
           >
             <span className="text-5xl">🕶️</span>
           </div>
@@ -165,10 +153,8 @@ export function VictoryScreen() {
 
         {/* Title */}
         <h1
-          className="text-2xl md:text-3xl text-matrix-green font-bold text-center tracking-widest"
+          className="text-2xl md:text-3xl font-display font-bold text-center tracking-wide text-gradient"
           style={{
-            fontFamily: '"Press Start 2P", monospace',
-            textShadow: '0 0 20px rgba(34, 197, 94, 0.8), 0 0 40px rgba(34, 197, 94, 0.4)',
             animation: 'glow 2s ease-in-out infinite alternate',
           }}
         >
@@ -177,81 +163,79 @@ export function VictoryScreen() {
 
         {/* Stats grid */}
         <div className="grid grid-cols-2 gap-3 w-full">
-          <div className="bg-black/60 border border-gray-700 rounded-lg p-3 text-center">
-            <div className="text-yellow-400 text-lg mb-1">⏱️</div>
-            <div className="text-matrix-green font-mono font-bold text-lg">{formatTime(elapsedMs)}</div>
-            <div className="text-gray-500 text-xs font-mono">Tempo Total</div>
-          </div>
-          <div className="bg-black/60 border border-gray-700 rounded-lg p-3 text-center">
-            <div className="text-yellow-400 text-lg mb-1">📦</div>
-            <div className="text-matrix-green font-mono font-bold text-lg">{artifactsCollected}/7</div>
-            <div className="text-gray-500 text-xs font-mono">Artefatos</div>
-          </div>
-          <div className="bg-black/60 border border-gray-700 rounded-lg p-3 text-center">
-            <div className="text-yellow-400 text-lg mb-1">⭐</div>
-            <div className="text-matrix-green font-mono font-bold text-lg">{stagesCompleted}/7</div>
-            <div className="text-gray-500 text-xs font-mono">Estágios</div>
-          </div>
-          <div className="bg-black/60 border border-gray-700 rounded-lg p-3 text-center">
-            <div className="text-yellow-400 text-lg mb-1">📝</div>
-            <div className="text-matrix-green font-mono font-bold text-lg">
-              {wordCount !== null ? wordCount.toLocaleString('pt-BR') : '...'}
+          {[
+            { icon: '⏱️', value: formatTime(elapsedMs), label: 'Tempo Total' },
+            { icon: '📦', value: `${artifactsCollected}/7`, label: 'Artefatos' },
+            { icon: '⭐', value: `${stagesCompleted}/7`, label: 'Estágios' },
+            { icon: '📝', value: wordCount !== null ? wordCount.toLocaleString('pt-BR') : '...', label: 'Palavras' },
+          ].map((stat) => (
+            <div key={stat.label} className="glass rounded-xl p-4 text-center">
+              <div className="text-lg mb-1">{stat.icon}</div>
+              <div className="text-white font-display font-bold text-lg tabular-nums">{stat.value}</div>
+              <div className="text-gray-500 text-xs font-display">{stat.label}</div>
             </div>
-            <div className="text-gray-500 text-xs font-mono">Palavras</div>
-          </div>
+          ))}
         </div>
 
         {/* Action buttons */}
         <div className="flex flex-col gap-2 w-full">
           <button
             onClick={handleDownloadPdf}
-            className="w-full px-4 py-3 bg-matrix-green/20 border-2 border-matrix-green text-matrix-green font-mono text-sm rounded hover:bg-matrix-green hover:text-matrix-black transition-colors font-bold"
+            className="w-full px-4 py-3 rounded-xl font-display text-sm font-semibold transition-all duration-300"
+            style={{
+              background: 'linear-gradient(135deg, rgba(34,197,94,0.15), rgba(6,182,212,0.15))',
+              border: '1px solid rgba(34,197,94,0.3)',
+              color: '#22C55E',
+            }}
           >
-            📄 Baixar Relatório em PDF
+            Baixar Relatório em PDF
           </button>
           <button
             onClick={handleDownload}
-            className="w-full px-4 py-2 bg-black/40 border border-gray-600 text-gray-300 font-mono text-xs rounded hover:border-matrix-green hover:text-matrix-green transition-colors"
+            className="w-full px-4 py-2.5 rounded-xl glass font-display text-xs font-medium text-gray-300 hover:text-white hover:bg-white/[0.05] transition-all duration-300"
           >
-            📥 Download Artefatos (ZIP)
+            Download Artefatos (ZIP)
           </button>
           <div className="flex gap-2">
             <button
               onClick={handleViewProposal}
-              className="flex-1 px-3 py-2 border border-gray-600 text-gray-300 font-mono text-xs rounded hover:border-matrix-green hover:text-matrix-green transition-colors"
+              className="flex-1 px-3 py-2.5 rounded-xl glass font-display text-xs font-medium text-gray-400 hover:text-white hover:bg-white/[0.05] transition-all duration-300"
             >
-              📄 Ver Proposta
+              Ver Proposta
             </button>
             <button
               onClick={handleViewLanding}
-              className="flex-1 px-3 py-2 border border-gray-600 text-gray-300 font-mono text-xs rounded hover:border-matrix-green hover:text-matrix-green transition-colors"
+              className="flex-1 px-3 py-2.5 rounded-xl glass font-display text-xs font-medium text-gray-400 hover:text-white hover:bg-white/[0.05] transition-all duration-300"
             >
-              🌐 Ver Landing Page
+              Ver Landing Page
             </button>
           </div>
           <button
             onClick={handleNewMission}
-            className="w-full px-4 py-2.5 bg-yellow-500/10 border border-yellow-500 text-yellow-400 font-mono text-sm rounded hover:bg-yellow-500 hover:text-black transition-colors"
+            className="w-full px-4 py-2.5 rounded-xl font-display text-sm font-medium transition-all duration-300"
+            style={{
+              background: 'linear-gradient(135deg, rgba(245,158,11,0.1), rgba(239,68,68,0.1))',
+              border: '1px solid rgba(245,158,11,0.3)',
+              color: '#F59E0B',
+            }}
           >
-            🚀 Nova Missão
+            Nova Missão
           </button>
         </div>
 
-        {/* Keyboard hint */}
-        <span className="text-gray-600 font-mono text-[10px]">
+        <span className="text-gray-600 text-[10px] font-display">
           Esc ou click fora para fechar
         </span>
       </div>
 
-      {/* Inline keyframes */}
       <style>{`
         @keyframes victoryParticle {
           0% { transform: translate(0, 0) scale(1); opacity: 1; }
           100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
         }
         @keyframes glow {
-          from { text-shadow: 0 0 20px rgba(34,197,94,0.8), 0 0 40px rgba(34,197,94,0.4); }
-          to { text-shadow: 0 0 30px rgba(34,197,94,1), 0 0 60px rgba(34,197,94,0.6), 0 0 80px rgba(34,197,94,0.3); }
+          from { filter: drop-shadow(0 0 8px rgba(34,197,94,0.4)); }
+          to { filter: drop-shadow(0 0 16px rgba(168,85,247,0.4)); }
         }
       `}</style>
     </div>

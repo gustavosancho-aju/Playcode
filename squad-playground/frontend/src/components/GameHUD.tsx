@@ -60,37 +60,46 @@ export function GameHUD() {
 
   return (
     <div
-      className={`fixed top-4 right-4 z-40 px-4 py-3 rounded-lg border font-mono text-xs max-w-[200px] ${
-        isPipelineComplete
-          ? 'border-yellow-400 bg-black/80 animate-pulse'
-          : 'border-matrix-green bg-black/70'
+      className={`fixed top-4 right-4 z-40 px-5 py-4 rounded-2xl glass font-mono text-xs max-w-[200px] shadow-glass ${
+        isPipelineComplete ? 'border-yellow-400/30' : ''
       }`}
     >
       {isPipelineComplete && (
-        <div className="text-yellow-400 font-bold text-center mb-2 text-sm">
-          COMPLETE!
+        <div className="text-gradient-gold font-display font-bold text-center mb-3 text-sm tracking-wide">
+          COMPLETE
         </div>
       )}
 
-      <div className="flex items-center gap-2 mb-1">
-        <span className="text-yellow-400">📦</span>
-        <span className="text-gray-300">
-          Artifacts: <span className="text-matrix-green font-bold">{artifactsCollected}</span>/7
-        </span>
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between">
+          <span className="text-gray-500">Artifacts</span>
+          <span className="text-white font-bold tabular-nums">{artifactsCollected}/7</span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span className="text-gray-500">Stages</span>
+          <span className="text-white font-bold tabular-nums">{stagesCompleted}/{totalStages}</span>
+        </div>
+
+        <div className="w-full h-px bg-white/[0.06]" />
+
+        <div className="flex items-center justify-between">
+          <span className="text-gray-500">Time</span>
+          <span className="text-matrix-green font-bold tabular-nums">{formatTime(elapsedMs)}</span>
+        </div>
       </div>
 
-      <div className="flex items-center gap-2 mb-1">
-        <span className="text-yellow-400">⭐</span>
-        <span className="text-gray-300">
-          Stages: <span className="text-matrix-green font-bold">{stagesCompleted}</span>/{totalStages}
-        </span>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <span className="text-yellow-400">⏱️</span>
-        <span className="text-gray-300">
-          Time: <span className="text-matrix-green font-bold">{formatTime(elapsedMs)}</span>
-        </span>
+      {/* Progress bar */}
+      <div className="mt-3 h-1 w-full bg-white/[0.06] rounded-full overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{
+            width: `${(stagesCompleted / totalStages) * 100}%`,
+            background: isPipelineComplete
+              ? 'linear-gradient(90deg, #F59E0B, #EF4444)'
+              : 'linear-gradient(90deg, #22C55E, #06B6D4)',
+          }}
+        />
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type { AgentState } from 'shared/types';
 import { AGENT_DEFINITIONS } from 'shared/types';
 import { StatusBadge } from './atoms/StatusBadge';
@@ -72,26 +72,43 @@ export function AgentHouse({ agent }: AgentHouseProps) {
     return `${Math.floor(secs / 60)}m${secs % 60}s`;
   };
 
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const el = cardRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    el.style.setProperty('--spotlight-x', `${e.clientX - rect.left}px`);
+    el.style.setProperty('--spotlight-y', `${e.clientY - rect.top}px`);
+  }, []);
+
   return (
     <div
+      ref={cardRef}
       className={`
-        relative flex-shrink-0 w-[200px] h-[250px] xl:w-[200px] lg:w-[160px] md:w-[128px]
+        card-3d spotlight-card relative flex-shrink-0
+        w-[200px] h-[250px] xl:w-[200px] lg:w-[160px] md:w-[128px]
         xl:h-[250px] lg:h-[200px] md:h-[160px]
-        rounded-xl border-2 p-4
+        rounded-2xl p-4
         flex flex-col items-center justify-between
         transition-all duration-500
-        ${isIdle ? 'opacity-60 grayscale-[50%]' : ''}
+        ${isIdle ? 'opacity-50' : ''}
         ${isError ? 'animate-[shake_0.3s_ease-in-out]' : ''}
       `}
       style={{
-        borderColor: isIdle ? `${agent.color}40` : agent.color,
+        background: isWorking
+          ? `linear-gradient(135deg, ${agent.color}08, ${agent.color}04)`
+          : '#1A1A1A',
+        border: `1px solid ${isIdle ? 'rgba(255,255,255,0.06)' : `${agent.color}30`}`,
         boxShadow: isWorking
-          ? `0 0 20px ${agent.color}50, 0 0 40px ${agent.color}25, inset 0 0 15px ${agent.color}10`
+          ? `0 20px 40px rgba(0,0,0,0.5), 0 0 30px ${agent.color}15, inset 0 1px 0 rgba(255,255,255,0.04)`
           : isDone
-          ? `0 0 10px ${agent.color}30`
-          : 'none',
-        backgroundColor: 'rgba(26, 26, 46, 0.8)',
+          ? `0 10px 30px rgba(0,0,0,0.4), 0 0 20px ${agent.color}10`
+          : '0 4px 20px rgba(0,0,0,0.3)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
       }}
+      onMouseMove={handleMouseMove}
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
       aria-label={`${agent.name}, status: ${agent.status}`}
@@ -99,18 +116,15 @@ export function AgentHouse({ agent }: AgentHouseProps) {
       {/* Speech bubble — shows message when working */}
       {agent.message && isWorking && (
         <div
-          className="absolute -top-10 left-1/2 -translate-x-1/2 max-w-[180px] px-3 py-1.5 rounded-lg border text-center animate-fade-in"
-          style={{
-            backgroundColor: 'rgba(0,0,0,0.9)',
-            borderColor: `${agent.color}60`,
-          }}
+          className="absolute -top-10 left-1/2 -translate-x-1/2 max-w-[180px] px-3 py-1.5 rounded-xl glass animate-fade-in"
         >
           <p className="text-[10px] font-mono text-gray-300 truncate">{agent.message}</p>
           <div
-            className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 border-b border-r"
+            className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45"
             style={{
-              backgroundColor: 'rgba(0,0,0,0.9)',
-              borderColor: `${agent.color}60`,
+              background: 'rgba(255,255,255,0.03)',
+              borderBottom: '1px solid rgba(255,255,255,0.06)',
+              borderRight: '1px solid rgba(255,255,255,0.06)',
             }}
           />
         </div>
@@ -119,15 +133,15 @@ export function AgentHouse({ agent }: AgentHouseProps) {
       {/* Glow ring for active agent */}
       {isWorking && (
         <div
-          className="absolute inset-0 rounded-xl animate-pulse pointer-events-none"
+          className="absolute inset-0 rounded-2xl animate-pulse pointer-events-none"
           style={{
-            boxShadow: `0 0 30px ${agent.color}40`,
+            boxShadow: `0 0 40px ${agent.color}20`,
           }}
         />
       )}
 
       {/* Agent icon with status-dependent animation */}
-      <div className={`text-4xl xl:text-4xl lg:text-3xl md:text-2xl transition-transform duration-300 ${
+      <div className={`text-4xl xl:text-4xl lg:text-3xl md:text-2xl transition-transform duration-500 ${
         isWorking ? 'animate-bounce' : isDone ? 'scale-110' : ''
       }`}>
         {agent.icon}
@@ -135,33 +149,30 @@ export function AgentHouse({ agent }: AgentHouseProps) {
 
       {/* Done checkmark overlay */}
       {isDone && (
-        <div className="absolute top-3 right-3 text-green-400 text-lg animate-fade-in">
-          ✓
+        <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center animate-fade-in">
+          <span className="text-green-400 text-xs">&#10003;</span>
         </div>
       )}
 
       {/* Mini-preview monitor — shows first lines of output when working or done */}
       {(isWorking || isDone) && agent.message && (
         <div
-          className="w-full h-12 rounded border overflow-hidden px-1.5 py-1"
+          className="w-full h-12 rounded-lg overflow-hidden px-2 py-1.5"
           style={{
-            borderColor: `${agent.color}40`,
-            backgroundColor: 'rgba(0,0,0,0.6)',
+            background: 'rgba(0,0,0,0.3)',
+            border: '1px solid rgba(255,255,255,0.04)',
           }}
         >
-          <div className={`font-mono text-[8px] leading-[11px] text-gray-500 overflow-hidden h-full ${isWorking ? 'animate-pulse' : ''}`}>
+          <div className={`font-mono text-[8px] leading-[11px] overflow-hidden h-full ${isWorking ? 'animate-pulse' : ''}`}>
             {agent.message.slice(0, 120).split('\n').slice(0, 4).map((line, i) => (
-              <div key={i} className="truncate" style={{ color: `${agent.color}80` }}>{line || '\u00A0'}</div>
+              <div key={i} className="truncate" style={{ color: `${agent.color}60` }}>{line || '\u00A0'}</div>
             ))}
           </div>
         </div>
       )}
 
       <div className="text-center">
-        <h3
-          className="font-mono text-sm font-semibold mb-1 transition-colors duration-300"
-          style={{ color: agent.color }}
-        >
+        <h3 className="font-display text-sm font-semibold mb-1 transition-colors duration-300" style={{ color: agent.color }}>
           {agent.name}
         </h3>
         <StatusBadge status={agent.status} />
@@ -169,13 +180,13 @@ export function AgentHouse({ agent }: AgentHouseProps) {
 
       {/* Execution timer */}
       {isWorking && elapsedMs > 0 && (
-        <p className="text-[10px] text-yellow-300/70 font-mono animate-pulse">
+        <p className="text-[10px] text-gray-500 font-mono tabular-nums">
           {formatTime(elapsedMs)}
         </p>
       )}
 
       {agent.message && !isWorking && (
-        <p className="text-xs text-gray-500 font-mono text-center truncate w-full">
+        <p className="text-xs text-gray-600 font-mono text-center truncate w-full">
           {agent.message}
         </p>
       )}
@@ -185,25 +196,21 @@ export function AgentHouse({ agent }: AgentHouseProps) {
       {/* Tooltip on hover */}
       {showTooltip && (
         <div
-          className="absolute -bottom-24 left-1/2 -translate-x-1/2 w-[220px] p-3 rounded-lg border z-30 animate-fade-in"
-          style={{
-            backgroundColor: 'rgba(0,0,0,0.95)',
-            borderColor: `${agent.color}60`,
-          }}
+          className="absolute -bottom-24 left-1/2 -translate-x-1/2 w-[220px] p-3 rounded-xl glass z-30 animate-fade-in shadow-glass"
         >
           <div className="flex items-center gap-2 mb-1">
             <span className="text-sm">{agent.icon}</span>
-            <span className="font-mono text-xs font-bold" style={{ color: agent.color }}>
+            <span className="font-display text-xs font-bold" style={{ color: agent.color }}>
               {agent.name}
             </span>
           </div>
-          <p className="text-gray-400 font-mono text-[10px]">{def?.role}</p>
-          <p className="text-gray-500 font-mono text-[10px] mt-1">
+          <p className="text-gray-500 text-[10px]">{def?.role}</p>
+          <p className="text-gray-600 text-[10px] mt-1">
             {def?.outputFile ? `Artefato: ${def.outputFile}` : 'Orquestrador'}
           </p>
           {agent.artifactPath && (
-            <p className="text-green-400/70 font-mono text-[10px] mt-1 truncate">
-              Último: {agent.artifactPath.split('/').pop()}
+            <p className="text-green-400/50 text-[10px] mt-1 truncate">
+              {agent.artifactPath.split('/').pop()}
             </p>
           )}
         </div>

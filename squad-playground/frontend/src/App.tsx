@@ -134,20 +134,20 @@ export default function App() {
         <VictoryScreen />
       </Suspense>
 
-      {/* Tab Navigation — top center */}
-      <div className="fixed top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 bg-black/80 backdrop-blur-sm border border-matrix-green/30 rounded-lg p-1 pointer-events-auto">
+      {/* Tab Navigation — premium glassmorphism navbar */}
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-0.5 glass rounded-2xl p-1 pointer-events-auto shadow-glass">
         {TAB_ITEMS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`
-              flex items-center gap-1.5 px-4 py-1.5 rounded font-mono text-xs transition-all duration-200
+              flex items-center gap-1.5 px-5 py-2 rounded-xl font-display text-xs font-medium tracking-wide transition-all duration-300
               ${activeTab === tab.id
-                ? 'bg-matrix-green/20 text-matrix-green border border-matrix-green/50'
-                : 'text-gray-500 hover:text-gray-300 border border-transparent'}
+                ? 'bg-white/[0.07] text-white shadow-glow'
+                : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'}
             `}
           >
-            <span>{tab.icon}</span>
+            <span className="text-sm">{tab.icon}</span>
             <span>{tab.label}</span>
           </button>
         ))}
@@ -169,20 +169,20 @@ export default function App() {
             <div className="pointer-events-auto">
               <Title />
             </div>
-            <p className="text-gray-500 font-mono text-sm">Matrix Pipeline v0.3.0</p>
+            <p className="text-gray-600 font-display text-xs tracking-widest">v0.4.0</p>
 
             <PipelineStarter />
 
-            <div className="flex items-center gap-4 pointer-events-auto">
+            <div className="flex items-center gap-3 pointer-events-auto">
               <button
                 onClick={runDemo}
-                className="px-4 py-1.5 border border-yellow-400/50 text-yellow-400/50 font-mono text-[10px] rounded hover:bg-yellow-400 hover:text-black transition-colors duration-200"
+                className="px-5 py-2 rounded-xl font-display text-xs font-medium text-yellow-400/70 border border-yellow-400/20 hover:bg-yellow-400/10 hover:text-yellow-300 hover:border-yellow-400/40 transition-all duration-300"
               >
-                ▶ Demo
+                Demo
               </button>
               <button
                 onClick={sendPing}
-                className="px-4 py-1.5 border border-gray-700 text-gray-600 font-mono text-[10px] rounded hover:text-gray-300 transition-colors duration-200"
+                className="px-5 py-2 rounded-xl font-display text-xs font-medium text-gray-500 border border-white/[0.06] hover:border-white/[0.12] hover:text-gray-300 hover:bg-white/[0.03] transition-all duration-300"
               >
                 Ping
               </button>

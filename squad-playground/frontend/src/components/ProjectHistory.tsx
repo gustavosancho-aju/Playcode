@@ -24,6 +24,22 @@ export function ProjectHistory() {
   const [expandedSession, setExpandedSession] = useState<string | null>(null);
   const [previewContent, setPreviewContent] = useState<{ filename: string; content: string; isHtml: boolean } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const deleteSession = useCallback(async (sessionId: string) => {
+    if (!confirm(`Excluir projeto "${sessionId}" e todos os artefatos?`)) return;
+    setDeletingId(sessionId);
+    try {
+      const res = await fetch(`${API}/api/sessions/${sessionId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete');
+      setSessions((prev) => prev.filter((s) => s.sessionId !== sessionId));
+      if (expandedSession === sessionId) setExpandedSession(null);
+    } catch {
+      alert('Erro ao excluir sessão');
+    } finally {
+      setDeletingId(null);
+    }
+  }, [expandedSession]);
 
   const fetchSessions = useCallback(async () => {
     try {
@@ -150,7 +166,7 @@ export function ProjectHistory() {
             return (
               <div
                 key={session.sessionId}
-                className="glass rounded-xl overflow-hidden transition-all hover:bg-white/[0.04]"
+                className="glass rounded-xl overflow-hidden transition-all hover:bg-white/[0.04] relative"
               >
                 <button
                   onClick={() => setExpandedSession(isExpanded ? null : session.sessionId)}
@@ -179,16 +195,28 @@ export function ProjectHistory() {
                     </p>
                   </div>
 
-                  <div className="flex -space-x-1">
-                    {session.artifacts.slice(0, 6).map((a, i) => {
-                      const def = getAgentDef(a.agent);
-                      return (
-                        <span key={i} className="text-sm" title={a.agent}>
-                          {def?.icon || '📄'}
-                        </span>
-                      );
-                    })}
+                  <div className="flex items-center gap-2">
+                    <div className="flex -space-x-1">
+                      {session.artifacts.slice(0, 6).map((a, i) => {
+                        const def = getAgentDef(a.agent);
+                        return (
+                          <span key={i} className="text-sm" title={a.agent}>
+                            {def?.icon || '📄'}
+                          </span>
+                        );
+                      })}
+                    </div>
                   </div>
+                </button>
+
+                {/* Delete button */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); deleteSession(session.sessionId); }}
+                  disabled={deletingId === session.sessionId}
+                  className="absolute top-3 right-3 px-2 py-1 text-[10px] font-display rounded-lg text-red-400/50 hover:text-red-400 hover:bg-red-400/10 border border-transparent hover:border-red-400/30 transition-all disabled:opacity-30"
+                  title="Excluir projeto"
+                >
+                  {deletingId === session.sessionId ? '...' : '✕'}
                 </button>
 
                 {isExpanded && (

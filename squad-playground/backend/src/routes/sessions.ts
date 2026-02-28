@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { readdir, stat, readFile } from 'fs/promises';
+import { readdir, stat, readFile, rm } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
 import { artifactManager } from '../artifacts/artifact-manager';
@@ -85,6 +85,30 @@ router.get('/api/sessions/:sessionId', async (req, res) => {
     res.json({ state, artifacts });
   } catch {
     res.status(404).json({ error: 'Session not found' });
+  }
+});
+
+// DELETE /api/sessions/:sessionId — delete a session and all its artifacts
+router.delete('/api/sessions/:sessionId', async (req, res) => {
+  const { sessionId } = req.params;
+
+  // Validate sessionId to prevent path traversal
+  if (!sessionId || /[\/\\]/.test(sessionId)) {
+    res.status(400).json({ error: 'Invalid session ID' });
+    return;
+  }
+
+  const dirPath = join(ARTIFACTS_DIR, sessionId);
+  if (!existsSync(dirPath)) {
+    res.status(404).json({ error: 'Session not found' });
+    return;
+  }
+
+  try {
+    await rm(dirPath, { recursive: true, force: true });
+    res.json({ ok: true, sessionId });
+  } catch {
+    res.status(500).json({ error: 'Failed to delete session' });
   }
 });
 

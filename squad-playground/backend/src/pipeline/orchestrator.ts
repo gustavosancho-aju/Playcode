@@ -334,6 +334,7 @@ export class PipelineOrchestrator {
     this.state.currentStepIndex = target;
     this.state.status = 'executing';
     this.state.error = null;
+    this.selectedThemeId = null; // Reset theme on rollback
     await this.saveState();
 
     // Broadcast rollback event
@@ -389,7 +390,9 @@ export class PipelineOrchestrator {
       const agentId = step.agentId;
 
       // Theme selection before apresentacao
+      logger.info(`Agent ${agentId}, selectedThemeId=${this.selectedThemeId}`);
       if (agentId === 'apresentacao' && !this.selectedThemeId) {
+        logger.info('Emitting layout-selection-required');
         this.broadcast('layout-selection-required', { sessionId: this.state.sessionId });
         logger.info('Waiting for theme selection before apresentacao (resume)');
         this.selectedThemeId = await this.waitForThemeSelection();

@@ -8,7 +8,9 @@
     "build": "npm run build -w shared && npm run build -w backend && npm run build -w frontend",
     "test": "npm run test -w backend && npm run test -w frontend",
     "lint": "eslint . --ext .ts,.tsx",
-    "typecheck": "tsc --noEmit -p frontend/tsconfig.json && tsc --noEmit -p backend/tsconfig.json"
+    "typecheck": "tsc --noEmit -p frontend/tsconfig.json && tsc --noEmit -p backend/tsconfig.json",
+    "landing": "npx ts-node landing-server.ts",
+    "dev:all": "concurrently \"npm run dev -w backend\" \"npm run dev -w frontend\" \"npm run landing\""
   },
   "devDependencies": {
     "concurrently": "^8.2.0",

@@ -10,11 +10,31 @@ import type {
   PipelineState,
   PipelineStep,
   PipelineConfig,
+  PipelineType,
   DEFAULT_PIPELINE_CONFIG,
   PIPELINE_ORDER,
 } from 'shared/types';
 
-// Re-import constants (shared/types exports them as values)
+// Pipeline presets
+const PIPELINE_PRESETS: Record<string, { steps: AgentId[]; approvalRequired: Partial<Record<AgentId, boolean>> }> = {
+  briefing: {
+    steps: ['pesquisa'],
+    approvalRequired: {},
+  },
+  consultoria: {
+    steps: ['organizador', 'solucoes', 'estruturas', 'financeiro', 'closer', 'apresentacao'],
+    approvalRequired: {
+      organizador: true,
+      solucoes: true,
+      estruturas: true,
+      financeiro: true,
+      closer: true,
+      apresentacao: true,
+    },
+  },
+};
+
+// Default pipeline order (legacy)
 const PIPELINE_ORDER_VAL: AgentId[] = [
   'pesquisa', 'organizador', 'solucoes', 'estruturas', 'financeiro', 'closer', 'apresentacao',
 ];
@@ -30,7 +50,7 @@ export class PipelineOrchestrator {
     this.io = io;
     this.config = {
       approvalRequired: config?.approvalRequired ?? { organizador: true, closer: true },
-      agentTimeout: config?.agentTimeout ?? 120_000,
+      agentTimeout: config?.agentTimeout ?? parseInt(process.env.AGENT_TIMEOUT || '600000', 10),
       maxRetries: config?.maxRetries ?? 1,
     };
     this.agentPromptsDir = join(__dirname, '..', '..', '..', 'agents');
@@ -48,12 +68,19 @@ export class PipelineOrchestrator {
     this.config.approvalRequired = approvalRequired as Partial<Record<AgentId, boolean>>;
   }
 
-  async startPipeline(sessionId: string, initialPrompt: string): Promise<void> {
+  async startPipeline(sessionId: string, initialPrompt: string, pipelineType?: PipelineType): Promise<void> {
     if (this.isRunning()) {
       throw new Error('Pipeline already running');
     }
 
-    const steps: PipelineStep[] = PIPELINE_ORDER_VAL.map((agentId) => ({
+    // Apply preset if pipelineType specified
+    const preset = pipelineType ? PIPELINE_PRESETS[pipelineType] : null;
+    const agentOrder = preset?.steps ?? PIPELINE_ORDER_VAL;
+    if (preset) {
+      this.config.approvalRequired = preset.approvalRequired;
+    }
+
+    const steps: PipelineStep[] = agentOrder.map((agentId) => ({
       agentId,
       status: 'pending',
       artifactPath: null,
@@ -81,36 +108,15 @@ export class PipelineOrchestrator {
     try {
       let previousOutput = initialPrompt;
 
+      const rejectionCounts: Record<number, number> = {};
+      const MAX_REJECTIONS = 3;
+
       for (let i = 0; i < steps.length; i++) {
         this.state.currentStepIndex = i;
         const step = steps[i];
         const agentId = step.agentId;
 
-        // Check approval required
-        if (this.config.approvalRequired[agentId]) {
-          this.state.status = 'approval_required';
-          await this.saveState();
-
-          this.broadcast('approval-required', {
-            agent: agentId,
-            sessionId,
-            step: i + 1,
-            totalSteps: steps.length,
-          });
-
-          logger.info(`Approval required for ${agentId}, pausing pipeline`);
-
-          const approved = await this.waitForApproval();
-          if (!approved) {
-            // User rejected, re-run previous step with feedback
-            logger.info(`Agent ${agentId} rejected, pipeline paused`);
-            continue;
-          }
-
-          this.state.status = 'executing';
-        }
-
-        // Execute agent
+        // Execute agent first
         step.status = 'executing';
         step.startedAt = new Date().toISOString();
         await this.saveState();
@@ -149,7 +155,8 @@ export class PipelineOrchestrator {
             step.artifactPath = artifactPath;
           }
 
-          step.status = 'completed';
+          // Mark as awaiting_approval (not completed yet) if approval is needed
+          step.status = this.config.approvalRequired[agentId] ? 'awaiting_approval' : 'completed';
           step.completedAt = new Date().toISOString();
           previousOutput = result;
 
@@ -180,6 +187,68 @@ export class PipelineOrchestrator {
         }
 
         await this.saveState();
+
+        // Check approval AFTER execution — show THIS agent's output
+        if (this.config.approvalRequired[agentId]) {
+          this.state.status = 'approval_required';
+          await this.saveState();
+
+          // Load THIS agent's artifact for preview
+          let artifactContent = '';
+          let artifactName = '';
+          if (step.artifactPath) {
+            artifactName = step.artifactPath.split('/').pop() || '';
+            artifactContent = await artifactManager.getArtifact(sessionId, artifactName) || '';
+          }
+
+          this.broadcast('approval-required', {
+            agent: agentId,
+            sessionId,
+            step: i + 1,
+            totalSteps: steps.length,
+            artifactName,
+            artifactContent,
+          });
+
+          logger.info(`Approval required for ${agentId} output, pausing pipeline`);
+
+          const approved = await this.waitForApproval();
+          if (!approved) {
+            // Track rejections per step to avoid infinite loop
+            rejectionCounts[i] = (rejectionCounts[i] || 0) + 1;
+
+            if (rejectionCounts[i] >= MAX_REJECTIONS) {
+              logger.error(`Agent ${agentId} rejected ${MAX_REJECTIONS} times, aborting pipeline`);
+              step.status = 'error';
+              this.state.status = 'error';
+              this.state.error = `Agent ${agentId} rejeitado ${MAX_REJECTIONS} vezes. Pipeline abortado.`;
+              await this.saveState();
+              this.broadcast('pipeline-error', {
+                agent: agentId,
+                error: this.state.error,
+                step: i + 1,
+                totalSteps: steps.length,
+              });
+              return;
+            }
+
+            // User rejected — rollback this step to re-run
+            logger.info(`Agent ${agentId} output rejected (${rejectionCounts[i]}/${MAX_REJECTIONS}), will re-run`);
+            step.status = 'pending';
+            step.artifactPath = null;
+            step.startedAt = null;
+            step.completedAt = null;
+            previousOutput = i > 0 ? await this.getPreviousOutput(i) : initialPrompt;
+            i--; // Re-run this same step
+            this.state.status = 'executing';
+            continue;
+          }
+
+          // Approved — mark as completed
+          step.status = 'completed';
+          await this.saveState();
+          this.state.status = 'executing';
+        }
       }
 
       // Pipeline complete
@@ -287,41 +356,15 @@ export class PipelineOrchestrator {
 
     let previousOutput = initialInput;
     const steps = this.state.steps;
+    const rejectionCounts: Record<number, number> = {};
+    const MAX_REJECTIONS = 3;
 
     for (let i = fromStep; i < steps.length; i++) {
       this.state.currentStepIndex = i;
       const step = steps[i];
       const agentId = step.agentId;
 
-      // Check approval
-      if (this.config.approvalRequired[agentId]) {
-        this.state.status = 'approval_required';
-        await this.saveState();
-
-        // Read current artifact content for preview
-        let artifactContent = '';
-        if (i > 0) {
-          const prevStep = steps[i - 1];
-          if (prevStep.artifactPath) {
-            const fname = prevStep.artifactPath.split('/').pop() || '';
-            artifactContent = await artifactManager.getArtifact(this.state.sessionId, fname) || '';
-          }
-        }
-
-        this.broadcast('approval-required', {
-          agent: agentId,
-          sessionId: this.state.sessionId,
-          step: i + 1,
-          totalSteps: steps.length,
-          artifactName: artifactContent ? steps[i - 1]?.artifactPath?.split('/').pop() : '',
-          artifactContent,
-        });
-
-        const approved = await this.waitForApproval();
-        if (!approved) continue;
-        this.state.status = 'executing';
-      }
-
+      // Execute agent first
       step.status = 'executing';
       step.startedAt = new Date().toISOString();
       await this.saveState();
@@ -349,7 +392,7 @@ export class PipelineOrchestrator {
           );
         }
 
-        step.status = 'completed';
+        step.status = this.config.approvalRequired[agentId] ? 'awaiting_approval' : 'completed';
         step.completedAt = new Date().toISOString();
         previousOutput = result;
 
@@ -373,6 +416,62 @@ export class PipelineOrchestrator {
       }
 
       await this.saveState();
+
+      // Check approval AFTER execution — show THIS agent's output
+      if (this.config.approvalRequired[agentId]) {
+        this.state.status = 'approval_required';
+        await this.saveState();
+
+        let artifactContent = '';
+        let artifactName = '';
+        if (step.artifactPath) {
+          artifactName = step.artifactPath.split('/').pop() || '';
+          artifactContent = await artifactManager.getArtifact(this.state.sessionId, artifactName) || '';
+        }
+
+        this.broadcast('approval-required', {
+          agent: agentId,
+          sessionId: this.state.sessionId,
+          step: i + 1,
+          totalSteps: steps.length,
+          artifactName,
+          artifactContent,
+        });
+
+        const approved = await this.waitForApproval();
+        if (!approved) {
+          rejectionCounts[i] = (rejectionCounts[i] || 0) + 1;
+
+          if (rejectionCounts[i] >= MAX_REJECTIONS) {
+            logger.error(`Agent ${agentId} rejected ${MAX_REJECTIONS} times, aborting pipeline`);
+            step.status = 'error';
+            this.state.status = 'error';
+            this.state.error = `Agent ${agentId} rejeitado ${MAX_REJECTIONS} vezes. Pipeline abortado.`;
+            await this.saveState();
+            this.broadcast('pipeline-error', {
+              agent: agentId,
+              error: this.state.error,
+              step: i + 1,
+              totalSteps: steps.length,
+            });
+            return;
+          }
+
+          logger.info(`Agent ${agentId} output rejected (${rejectionCounts[i]}/${MAX_REJECTIONS}), will re-run`);
+          step.status = 'pending';
+          step.artifactPath = null;
+          step.startedAt = null;
+          step.completedAt = null;
+          previousOutput = i > 0 ? await this.getPreviousOutput(i) : '';
+          i--;
+          this.state.status = 'executing';
+          continue;
+        }
+
+        step.status = 'completed';
+        await this.saveState();
+        this.state.status = 'executing';
+      }
     }
 
     // Pipeline complete

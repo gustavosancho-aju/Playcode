@@ -89,6 +89,15 @@ Pipeline concluído. Landing page HTML gerada com sucesso.
 [/HANDOFF]
 ```
 
+## REGRA CRÍTICA: Output Direto
+
+**VOCÊ DEVE gerar o HTML completo diretamente no texto da sua resposta.**
+- NÃO use ferramentas (Write, Edit, Bash, etc.)
+- NÃO peça permissão para salvar arquivos
+- NÃO diga "arquivo pronto para escrita" — GERE O CÓDIGO AQUI
+- Sua resposta INTEIRA deve ser o artefato completo com as protocol tags
+- O sistema vai capturar o conteúdo entre [OUTPUT:07-landing-page.html] e [/OUTPUT]
+
 ## Regras de Geração
 - HTML completo e funcional (single file, inline styles)
 - Design profissional — NÃO usar estilo genérico/template
@@ -98,6 +107,7 @@ Pipeline concluído. Landing page HTML gerada com sucesso.
 - Sem dependências externas além de Google Fonts
 - Sections com IDs para navegação por âncora
 - Lighthouse performance 90+ (sem JS pesado, imagens otimizadas)
+- Mínimo 500 linhas de HTML — gere uma landing page COMPLETA e profissional
 
 ## Artifact Output
 `07-landing-page.html`

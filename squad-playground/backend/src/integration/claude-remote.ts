@@ -64,12 +64,13 @@ export class ClaudeRemoteClient extends EventEmitter {
         let fullResponse = '';
 
         // Use Claude Code CLI in headless/print mode
-        const args = ['--print', '--system-prompt', systemPrompt, prompt];
+        // Pass prompt via stdin to avoid CLI misinterpreting markdown (---) as flags
+        const args = ['--print', '--no-session-persistence', '--setting-sources', '', '--allowedTools', '', '--system-prompt', systemPrompt, '-'];
 
-        const process = this.spawnClaude(args);
+        const cliProcess = this.spawnClaude(args, prompt);
         const chunks: string[] = [];
 
-        yield* this.streamFromProcess(process, timeout, chunks);
+        yield* this.streamFromProcess(cliProcess, timeout, chunks);
 
         fullResponse = chunks.join('');
         const duration = Date.now() - startTime;
@@ -105,14 +106,29 @@ export class ClaudeRemoteClient extends EventEmitter {
     };
   }
 
-  private spawnClaude(args: string[]): ChildProcess {
+  private spawnClaude(args: string[], stdinData?: string): ChildProcess {
     const command = env.CLAUDE_REMOTE_URL
       ? 'curl' // Placeholder for remote API
       : 'claude';
 
-    return spawn(command, args, {
+    const spawnEnv = { ...process.env };
+    delete spawnEnv.CLAUDECODE;
+    delete spawnEnv.CLAUDE_CODE_SESSION;
+    delete spawnEnv.CLAUDE_CODE_ENTRYPOINT;
+
+    const proc = spawn(command, args, {
       stdio: ['pipe', 'pipe', 'pipe'],
+      cwd: '/tmp',
+      env: spawnEnv,
     });
+
+    // Write prompt via stdin then close, so CLI reads from stdin instead of args
+    if (stdinData) {
+      proc.stdin?.write(stdinData);
+    }
+    proc.stdin?.end();
+
+    return proc;
   }
 
   private async *streamFromProcess(
@@ -128,6 +144,10 @@ export class ClaudeRemoteClient extends EventEmitter {
 
     try {
       if (!proc.stdout) throw new Error('No stdout on process');
+
+      // Collect stderr in parallel so it's available on error
+      const stderrChunks: Buffer[] = [];
+      proc.stderr?.on('data', (chunk) => stderrChunks.push(Buffer.from(chunk)));
 
       for await (const data of proc.stdout) {
         const text = data.toString();
@@ -149,7 +169,8 @@ export class ClaudeRemoteClient extends EventEmitter {
       });
 
       if (exitCode !== 0) {
-        const stderr = proc.stderr ? await this.readStream(proc.stderr) : '';
+        const stderr = Buffer.concat(stderrChunks).toString();
+        logger.error(`Claude stderr: ${stderr}`);
         throw new Error(`Claude exited with code ${exitCode}: ${stderr}`);
       }
     } finally {
@@ -167,7 +188,15 @@ export class ClaudeRemoteClient extends EventEmitter {
 
   private execClaude(args: string[], timeout: number): Promise<string> {
     return new Promise((resolve, reject) => {
-      const proc = spawn('claude', args, { stdio: ['pipe', 'pipe', 'pipe'] });
+      const execEnv = { ...process.env };
+      delete execEnv.CLAUDECODE;
+      delete execEnv.CLAUDE_CODE_SESSION;
+      delete execEnv.CLAUDE_CODE_ENTRYPOINT;
+
+      const proc = spawn('claude', args, {
+        stdio: ['pipe', 'pipe', 'pipe'],
+        env: execEnv,
+      });
       let output = '';
       const timer = setTimeout(() => {
         proc.kill('SIGTERM');

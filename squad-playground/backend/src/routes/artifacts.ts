@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { createReadStream, existsSync } from 'fs';
 import { readdir, stat, readFile } from 'fs/promises';
 import { join, basename } from 'path';
+import archiver from 'archiver';
 import { artifactManager } from '../artifacts/artifact-manager';
 
 const router = Router();
@@ -16,24 +17,7 @@ router.get('/api/artifacts/:sessionId', async (req, res) => {
   }
 });
 
-// GET /api/artifacts/:sessionId/:filename — get raw artifact
-router.get('/api/artifacts/:sessionId/:filename', async (req, res) => {
-  try {
-    const content = await artifactManager.getArtifact(
-      req.params.sessionId,
-      req.params.filename
-    );
-
-    if (!content) {
-      res.status(404).json({ error: 'Artifact not found' });
-      return;
-    }
-
-    res.type('text/markdown').send(content);
-  } catch {
-    res.status(400).json({ error: 'Invalid filename' });
-  }
-});
+// IMPORTANT: Specific routes MUST come before the generic /:filename route
 
 // GET /api/artifacts/:sessionId/proposta/preview — HTML preview of proposal
 router.get('/api/artifacts/:sessionId/proposta/preview', async (req, res) => {
@@ -150,28 +134,43 @@ router.get('/api/artifacts/:sessionId/download', async (req, res) => {
       return;
     }
 
-    // Build a simple ZIP using raw concatenation (no external dep)
-    // Use tar-like approach: set headers and pipe files
     const files = await readdir(sessionDir);
     const artifactFiles = files.filter((f) => f.endsWith('.md') || f.endsWith('.html') || f.endsWith('.css') || f.endsWith('.json'));
 
-    res.setHeader('Content-Type', 'application/octet-stream');
-    res.setHeader('Content-Disposition', `attachment; filename="artifacts-${req.params.sessionId}.tar"`);
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="artifacts-${req.params.sessionId}.zip"`);
 
-    // Simple concatenation with file boundaries (not a real ZIP, but functional)
+    const archive = archiver('zip', { zlib: { level: 9 } });
+    archive.on('error', (err) => { throw err; });
+    archive.pipe(res);
+
     for (const file of artifactFiles) {
       const filePath = join(sessionDir, file);
-      const stats = await stat(filePath);
-      const content = await readFile(filePath, 'utf-8');
-      // Write file header
-      res.write(`\n=== FILE: ${file} (${stats.size} bytes) ===\n`);
-      res.write(content);
-      res.write('\n');
+      archive.file(filePath, { name: file });
     }
 
-    res.end();
+    await archive.finalize();
   } catch {
     res.status(500).json({ error: 'Erro ao gerar download' });
+  }
+});
+
+// GET /api/artifacts/:sessionId/:filename — get raw artifact (MUST be last — catches all)
+router.get('/api/artifacts/:sessionId/:filename', async (req, res) => {
+  try {
+    const content = await artifactManager.getArtifact(
+      req.params.sessionId,
+      req.params.filename
+    );
+
+    if (!content) {
+      res.status(404).json({ error: 'Artifact not found' });
+      return;
+    }
+
+    res.type('text/markdown').send(content);
+  } catch {
+    res.status(400).json({ error: 'Invalid filename' });
   }
 });
 

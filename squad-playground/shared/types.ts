@@ -149,7 +149,7 @@ export interface PipelineState {
 
 export interface PipelineStep {
   agentId: AgentId;
-  status: 'pending' | 'executing' | 'completed' | 'error';
+  status: 'pending' | 'executing' | 'awaiting_approval' | 'completed' | 'error';
   artifactPath: string | null;
   startedAt: string | null;
   completedAt: string | null;
@@ -212,11 +212,33 @@ export type ConnectionStatus = 'connected' | 'disconnected' | 'reconnecting';
 
 // --- Configuration Types ---
 
+export type PipelineType = 'briefing' | 'consultoria';
+
 export interface PipelineConfig {
   approvalRequired: Partial<Record<AgentId, boolean>>;
   agentTimeout: number;
   maxRetries: number;
+  pipelineType?: PipelineType;
+  steps?: AgentId[];
 }
+
+export const PIPELINE_PRESETS: Record<PipelineType, { steps: AgentId[]; approvalRequired: Partial<Record<AgentId, boolean>> }> = {
+  briefing: {
+    steps: ['pesquisa'],
+    approvalRequired: {},
+  },
+  consultoria: {
+    steps: ['organizador', 'solucoes', 'estruturas', 'financeiro', 'closer', 'apresentacao'],
+    approvalRequired: {
+      organizador: true,
+      solucoes: true,
+      estruturas: true,
+      financeiro: true,
+      closer: true,
+      apresentacao: true,
+    },
+  },
+};
 
 export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   approvalRequired: {

@@ -10,10 +10,11 @@ export function createPipelineRouter(io: Server): Router {
 
   // POST /api/pipeline/start — start pipeline
   router.post('/api/pipeline/start', async (req, res) => {
-    const { prompt, sessionId } = req.body;
+    const { prompt, document, sessionId, pipelineType } = req.body;
 
-    if (!prompt) {
-      res.status(400).json({ error: 'prompt is required' });
+    const input = prompt || document;
+    if (!input) {
+      res.status(400).json({ error: 'prompt or document is required' });
       return;
     }
 
@@ -23,14 +24,15 @@ export function createPipelineRouter(io: Server): Router {
     }
 
     const sid = sessionId || generateSessionId();
-    logger.info(`Starting pipeline: session=${sid}`);
+    const type = pipelineType || (document ? 'consultoria' : 'briefing');
+    logger.info(`Starting pipeline: session=${sid}, type=${type}`);
 
     // Start pipeline asynchronously
-    orchestrator!.startPipeline(sid, prompt).catch((err) => {
+    orchestrator!.startPipeline(sid, input, type).catch((err) => {
       logger.error(`Pipeline crashed: ${err.message}`);
     });
 
-    res.json({ sessionId: sid, status: 'started' });
+    res.json({ sessionId: sid, status: 'started', pipelineType: type });
   });
 
   // GET /api/pipeline/state — get current state

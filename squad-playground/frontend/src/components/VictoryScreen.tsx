@@ -20,6 +20,7 @@ interface Particle {
   ty: number;
   size: number;
   delay: number;
+  color: string;
 }
 
 function generateParticles(): Particle[] {
@@ -34,6 +35,7 @@ function generateParticles(): Particle[] {
       ty: Math.sin(angle) * dist,
       size: 2 + Math.random() * 6,
       delay: Math.random() * 300,
+      color: `hsl(${140 + Math.random() * 30}, 80%, ${50 + Math.random() * 20}%)`,
     };
   });
 }
@@ -63,14 +65,15 @@ export function VictoryScreen() {
   // Fetch word count
   useEffect(() => {
     if (!visible || !sessionId) return;
-    fetch(`${API_BASE}/api/artifacts/${sessionId}`)
+    const controller = new AbortController();
+    fetch(`${API_BASE}/api/artifacts/${sessionId}`, { signal: controller.signal })
       .then((r) => r.json())
       .then((artifacts: { size: number }[]) => {
-        // Rough estimate: ~5 chars per word
         const totalBytes = artifacts.reduce((sum, a) => sum + a.size, 0);
         setWordCount(Math.round(totalBytes / 5));
       })
-      .catch(() => setWordCount(null));
+      .catch(() => { if (!controller.signal.aborted) setWordCount(null); });
+    return () => controller.abort();
   }, [visible, sessionId]);
 
   // Escape to dismiss
@@ -139,7 +142,7 @@ export function VictoryScreen() {
                   style={{
                     width: p.size,
                     height: p.size,
-                    backgroundColor: `hsl(${140 + Math.random() * 30}, 80%, ${50 + Math.random() * 20}%)`,
+                    backgroundColor: p.color,
                     animation: `victoryParticle 1.2s ease-out ${p.delay}ms forwards`,
                     '--tx': `${p.tx}px`,
                     '--ty': `${p.ty}px`,

@@ -204,6 +204,8 @@ export function useSocket() {
 
     socket.on('pipeline-started', (data: { sessionId: string }) => {
       usePipelineStore.getState().setSession(data.sessionId);
+      // Reset chunk counts for new pipeline
+      Object.keys(chunkCounts).forEach((k) => delete chunkCounts[k]);
     });
 
     socket.on('approval-required', (data: { agent: string; artifactName?: string; artifactContent?: string }) => {
@@ -217,12 +219,10 @@ export function useSocket() {
     socket.on('pipeline-rollback', (data: { targetStep: number; targetAgent: string }) => {
       usePipelineStore.getState().handleRollback(data.targetStep, data.targetAgent as AgentId);
       // Decrease game stats on rollback
-      const gameStore = useGameStore.getState();
       const currentStep = usePipelineStore.getState().currentStep;
       const stepsRolledBack = currentStep - data.targetStep;
       if (stepsRolledBack > 0) {
         for (let i = 0; i < stepsRolledBack; i++) {
-          // Decrease stages and artifacts
           const gs = useGameStore.getState();
           if (gs.stagesCompleted > 0) {
             useGameStore.setState({
@@ -233,8 +233,7 @@ export function useSocket() {
         }
       }
       // Reset agent statuses for rolled-back agents
-      const agents = useAgentStore.getState().agents;
-      const pipelineOrder = ['pesquisa', 'organizador', 'solucoes', 'estruturas', 'financeiro', 'closer', 'apresentacao'];
+      const pipelineOrder = AGENT_DEFINITIONS.map((a) => a.id);
       for (let i = data.targetStep; i < pipelineOrder.length; i++) {
         useAgentStore.getState().updateAgent(pipelineOrder[i] as AgentId, {
           status: 'idle',

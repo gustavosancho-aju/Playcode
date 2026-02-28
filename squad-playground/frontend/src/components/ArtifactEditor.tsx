@@ -41,6 +41,7 @@ export function ArtifactEditor({
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const lineNumbersRef = useRef<HTMLDivElement>(null);
   const autoSaveTimerRef = useRef<ReturnType<typeof setInterval>>();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -189,7 +190,7 @@ export function ArtifactEditor({
       const imgMd = `![${file.name}](${data.url})\n`;
       const newContent = content.substring(0, pos) + imgMd + content.substring(pos);
       setContent(newContent);
-    } catch (err) {
+    } catch {
       alert('Erro ao fazer upload da imagem');
     } finally {
       setUploading(false);
@@ -211,6 +212,12 @@ export function ArtifactEditor({
   const handleDragLeave = () => setIsDragging(false);
 
   const handleFileSelect = () => fileInputRef.current?.click();
+  const handleEditorScroll = () => {
+    if (textareaRef.current && lineNumbersRef.current) {
+      lineNumbersRef.current.scrollTop = textareaRef.current.scrollTop;
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) uploadImage(file);
@@ -306,7 +313,7 @@ export function ArtifactEditor({
             </div>
             <div className="flex flex-1 overflow-hidden">
               {/* Line numbers */}
-              <div className="py-3 px-2 text-right text-gray-600 font-mono text-xs leading-[1.6] select-none overflow-hidden bg-black/30 min-w-[3rem]">
+              <div ref={lineNumbersRef} className="py-3 px-2 text-right text-gray-600 font-mono text-xs leading-[1.6] select-none overflow-hidden bg-black/30 min-w-[3rem]">
                 {Array.from({ length: lineCount }, (_, i) => (
                   <div key={i}>{i + 1}</div>
                 ))}
@@ -315,6 +322,7 @@ export function ArtifactEditor({
                 ref={textareaRef}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
+                onScroll={handleEditorScroll}
                 className="flex-1 resize-none bg-transparent text-gray-200 font-mono text-xs leading-[1.6] p-3 outline-none overflow-auto"
                 style={{ fontFamily: '"JetBrains Mono", monospace' }}
                 spellCheck={false}

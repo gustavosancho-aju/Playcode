@@ -49,6 +49,8 @@ export function ApprovalPopup() {
     if (!pendingApproval || showEditor) return;
 
     const handleKey = (e: KeyboardEvent) => {
+      // Don't intercept when typing in inputs/textareas
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       if (e.key === 'Enter') {
         e.preventDefault();
         handleApprove();
@@ -56,7 +58,6 @@ export function ApprovalPopup() {
         e.preventDefault();
         handleEdit();
       }
-      // Escape = keep paused (no action)
     };
 
     window.addEventListener('keydown', handleKey);
@@ -148,7 +149,7 @@ export function ApprovalPopup() {
             onClick={handleBack}
             className="flex-1 px-4 py-2.5 bg-red-500/10 border border-red-600 text-red-400 font-mono text-sm rounded hover:bg-red-600 hover:text-white transition-colors duration-200"
           >
-            ↩ Voltar <span className="text-xs opacity-60 ml-1">(Esc)</span>
+            ↩ Voltar
           </button>
         </div>
 

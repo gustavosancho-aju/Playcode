@@ -101,6 +101,11 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
             onChange={() => toggleEffect('particles')}
             disabled={effects.reduceMotion}
           />
+          <Toggle
+            label="Sound Effects"
+            checked={effects.soundEnabled}
+            onChange={() => toggleEffect('soundEnabled')}
+          />
           <div className="mt-2 pt-2 border-t border-matrix-green/10">
             <Toggle
               label="Reduce Motion"

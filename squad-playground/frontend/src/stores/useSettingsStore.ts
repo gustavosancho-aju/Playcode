@@ -9,6 +9,7 @@ interface EffectsSettings {
   glitch: boolean;
   particles: boolean;
   reduceMotion: boolean;
+  soundEnabled: boolean;
 }
 
 interface AnimationSettings {
@@ -43,6 +44,7 @@ const defaultEffects: EffectsSettings = {
   glitch: false,
   particles: !prefersReducedMotion,
   reduceMotion: prefersReducedMotion,
+  soundEnabled: false,
 };
 
 const defaultAnimation: AnimationSettings = {

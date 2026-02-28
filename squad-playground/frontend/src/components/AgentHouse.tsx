@@ -2,6 +2,25 @@ import { useState, useEffect, useRef } from 'react';
 import type { AgentState } from 'shared/types';
 import { AGENT_DEFINITIONS } from 'shared/types';
 import { StatusBadge } from './atoms/StatusBadge';
+import { useSettingsStore } from '../stores/useSettingsStore';
+
+function playCompletionSound() {
+  try {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.setValueAtTime(1320, ctx.currentTime + 0.08);
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.25);
+    setTimeout(() => ctx.close(), 500);
+  } catch { /* ignore audio errors */ }
+}
 
 interface AgentHouseProps {
   agent: AgentState;
@@ -20,6 +39,16 @@ export function AgentHouse({ agent }: AgentHouseProps) {
   const startTimeRef = useRef<number | null>(null);
 
   const def = AGENT_DEFINITIONS.find((a) => a.id === agent.id);
+  const soundEnabled = useSettingsStore((s) => s.effects.soundEnabled);
+  const prevStatusRef = useRef(agent.status);
+
+  // Play sound on completion
+  useEffect(() => {
+    if (prevStatusRef.current !== 'done' && agent.status === 'done' && soundEnabled) {
+      playCompletionSound();
+    }
+    prevStatusRef.current = agent.status;
+  }, [agent.status, soundEnabled]);
 
   // Track execution time
   useEffect(() => {
@@ -108,6 +137,23 @@ export function AgentHouse({ agent }: AgentHouseProps) {
       {isDone && (
         <div className="absolute top-3 right-3 text-green-400 text-lg animate-fade-in">
           ✓
+        </div>
+      )}
+
+      {/* Mini-preview monitor — shows first lines of output when working or done */}
+      {(isWorking || isDone) && agent.message && (
+        <div
+          className="w-full h-12 rounded border overflow-hidden px-1.5 py-1"
+          style={{
+            borderColor: `${agent.color}40`,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+          }}
+        >
+          <div className={`font-mono text-[8px] leading-[11px] text-gray-500 overflow-hidden h-full ${isWorking ? 'animate-pulse' : ''}`}>
+            {agent.message.slice(0, 120).split('\n').slice(0, 4).map((line, i) => (
+              <div key={i} className="truncate" style={{ color: `${agent.color}80` }}>{line || '\u00A0'}</div>
+            ))}
+          </div>
         </div>
       )}
 

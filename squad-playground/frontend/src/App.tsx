@@ -16,6 +16,7 @@ import { MicroTasks } from './components/MicroTasks';
 import { TeamStructure } from './components/TeamStructure';
 import { TaskBoard } from './components/TaskBoard';
 import { ProjectHistory } from './components/ProjectHistory';
+import { MemoryScreen } from './components/MemoryScreen';
 import { useSocket } from './hooks/useSocket';
 import { useConnectionStore } from './stores/useConnectionStore';
 import { useAgentStore } from './stores/useAgentStore';
@@ -24,7 +25,7 @@ import { useChatStore } from './stores/useChatStore';
 import { AGENT_DEFINITIONS } from 'shared/types';
 import type { AgentId } from 'shared/types';
 
-type AppTab = 'pipeline' | 'equipe' | 'tarefas' | 'projetos';
+type AppTab = 'pipeline' | 'equipe' | 'tarefas' | 'projetos' | 'memoria';
 
 // Lazy load heavy overlays (AC: 8 — bundle optimization)
 const ApprovalPopup = lazy(() => import('./components/ApprovalPopup').then((m) => ({ default: m.ApprovalPopup })));
@@ -46,6 +47,7 @@ const TAB_ITEMS: { id: AppTab; label: string; icon: string }[] = [
   { id: 'tarefas', label: 'Tarefas', icon: '📋' },
   { id: 'equipe', label: 'Equipe', icon: '👥' },
   { id: 'projetos', label: 'Projetos', icon: '📁' },
+  { id: 'memoria', label: 'Memoria', icon: '🧠' },
 ];
 
 export default function App() {
@@ -211,6 +213,13 @@ export default function App() {
       {activeTab === 'projetos' && (
         <div className="fixed inset-0 z-10 pt-14 pb-12">
           <ProjectHistory />
+        </div>
+      )}
+
+      {/* Memory Tab */}
+      {activeTab === 'memoria' && (
+        <div className="fixed inset-0 z-10 pt-14 pb-12">
+          <MemoryScreen />
         </div>
       )}
 

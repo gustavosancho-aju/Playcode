@@ -5,6 +5,7 @@ import { createMockRouter } from './routes/mock';
 import { claudeRouter } from './routes/claude';
 import { artifactsRouter } from './routes/artifacts';
 import { sessionsRouter } from './routes/sessions';
+import { memoryRouter } from './routes/memory';
 import { createPipelineRouter } from './routes/pipeline';
 import { env } from './config/env';
 import { logger } from './utils/logger';
@@ -16,6 +17,7 @@ app.use(createMockRouter(io));
 app.use(claudeRouter);
 app.use(artifactsRouter);
 app.use(sessionsRouter);
+app.use(memoryRouter);
 app.use(createPipelineRouter(io));
 
 export { io };
